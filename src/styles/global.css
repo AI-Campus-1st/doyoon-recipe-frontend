@@ -144,6 +144,13 @@ button, input { font: inherit; color: inherit; }
 .icon-btn:disabled { opacity: var(--opacity-disabled); cursor: not-allowed; }
 .icon { width: var(--font-card-title); height: var(--font-card-title); flex: none; }
 .icon--lg { width: var(--space-xl); height: var(--space-xl); }
+/* 작은 아이콘 버튼(2026-10-20): 누르는 영역은 size.TouchTarget 그대로, 아이콘·색만 작고 흐리게 */
+.icon-btn--sm { color: var(--color-text-secondary); border-radius: var(--radius-pill); }
+.icon-btn--sm:hover:not(:disabled) { color: var(--color-primary); }
+/* 섹션 제목 오른쪽 끝 새로고침 버튼: 제목 줄 높이를 키우지 않게 위아래·오른쪽을 안쪽으로 당긴다 */
+.section-refresh { margin-block: calc(var(--space-sm) * -1); margin-right: calc(var(--space-sm) * -1); }
+.section-refresh[aria-busy='true'] .icon { animation: spin 0.8s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .section-refresh[aria-busy='true'] .icon { animation: none; } }
 
 /* ---------- FormField / inputs ---------- */
 .field__label { display: block; font-size: var(--font-small); font-weight: var(--weight-semibold); line-height: var(--lh-1-45); margin-bottom: var(--space-label-gap); }
@@ -203,6 +210,7 @@ button, input { font: inherit; color: inherit; }
 /* ---------- SectionHeader ---------- */
 .section-header-wrap { margin-bottom: var(--space-md); }
 .section-header { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-md); }
+.section-header:has(.section-refresh) { align-items: center; } /* 버튼이 있으면 제목과 가운데 맞춤 */
 .section-header__accessory { font-size: var(--font-small); color: var(--color-text-secondary); flex: none; }
 .section-header__desc { margin-top: var(--space-xs); }
 

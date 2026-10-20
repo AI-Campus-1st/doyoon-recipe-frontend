@@ -76,3 +76,10 @@ export const SEARCH_RESULTS = [
 export const SEARCH_RESULTS_FULL = Array.from({ length: 20 }, (_, i) => ({
   id: 100 + i, title: `두부요리 ${i + 1}`, cook_time_min: 10, urgent_used: [], missing: [],
 }));
+
+// GET /recipes/suggest?q=두 — 검색어 자동완성(2026-10-20): 요리명(type recipe, id)·재료명(type ingredient)
+export const SUGGESTIONS = [
+  { type: 'ingredient', label: '두부' },
+  { type: 'recipe', id: 41, label: '두부조림' },
+  { type: 'ingredient', label: '순두부' },
+];

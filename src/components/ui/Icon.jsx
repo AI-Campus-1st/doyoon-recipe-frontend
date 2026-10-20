@@ -36,6 +36,13 @@ const PATHS = {
     </>
   ),
   plus: <path d="M12 5v14M5 12h14" />,
+  // 새로고침(시계 방향 화살표) — 추천 화면 '다른 메뉴 보기'(2026-10-20)
+  refresh: (
+    <>
+      <path d="M21 12a9 9 0 1 1-2.64-6.36L21 8" />
+      <path d="M21 3v5h-5" />
+    </>
+  ),
 };
 
 export default function Icon({ name, size }) {

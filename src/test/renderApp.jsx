@@ -15,7 +15,7 @@ export function mockApi(routes) {
     calls.push({ key, url, body, headers: init.headers });
     const handler = routes[key];
     if (!handler) return new Response(JSON.stringify({ error: { code: 'NOT_FOUND', message: key } }), { status: 404 });
-    const result = await handler(body);
+    const result = await handler(body, url); // url: 쿼리 문자열까지 보고 응답을 바꿀 때(예: ?section=)
     const [status, json] = result;
     return new Response(status === 204 ? null : JSON.stringify(json), {
       status,

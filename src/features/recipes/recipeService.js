@@ -22,6 +22,14 @@ export function assertRecommendationPage(data) {
 export const fetchRecommendations = (signal) =>
   request('/recommendations', { signal }).then(assertRecommendationPage);
 
+// 영역별 '다른 메뉴 보기'(2026-10-20 사용자 결정): 한 영역만 새로 받는다.
+// - section: 'key_menus' | 'recipes', excludeIds: 화면의 다른 영역에 지금 보이는 레시피 id(서버가 빼고 고름 → 한 화면 중복 방지)
+// - 돌려주는 값은 그 영역의 배열만(응답의 다른 영역은 서버가 빈 배열로 보냄)
+export function fetchRecommendationSection(section, excludeIds, signal) {
+  const query = new URLSearchParams({ section, exclude: excludeIds.join(',') });
+  return request(`/recommendations?${query}`, { signal }).then((data) => assertRecommendationPage(data)[section]);
+}
+
 // 검색(F13): GET /recipes/search?q=… → 배열(최대 20개, 서버가 정렬). 배열이 아니면 오류 화면으로.
 // - encodeURIComponent: '김치 & 두부'처럼 공백·&가 든 검색어도 q 값 하나로 전달되게 한다(안 하면 &에서 잘림).
 export function assertSearchResults(data) {
@@ -33,6 +41,11 @@ export function assertSearchResults(data) {
 
 export const fetchRecipeSearch = (query, signal) =>
   request(`/recipes/search?q=${encodeURIComponent(query)}`, { signal }).then(assertSearchResults);
+
+// 추천 검색어(F13 자동완성): GET /recipes/suggest?q=… → [{ type:'recipe', id, label } | { type:'ingredient', label }] (최대 8개, 서버가 정렬)
+// - 모양 검사는 검색과 같은 기준(배열이 아니면 INVALID_RESPONSE). 실패를 어떻게 보일지는 화면(조용히 목록 숨김)이 정한다.
+export const fetchSearchSuggestions = (query, signal) =>
+  request(`/recipes/suggest?q=${encodeURIComponent(query)}`, { signal }).then(assertSearchResults);
 
 // 상세 응답 모양 검사(사용자 결정 2026-10-15: 빠진 응답은 '오류'로 처리)
 // - 왜: RecipeDetailPage가 ingredients/steps를 .map으로 그리므로 둘 중 하나라도 배열이 아니면 화면 전체가 깨졌다.

@@ -140,10 +140,15 @@ export function compareKeyMenus(a, b) {
 }
 const KEY_MENU_MAX = 3;
 
-function recommendationPage(inventory, today, seed) {
-  const ranked = evaluateAll(inventory, today, seed).filter((r) => r.keyMenu).sort(compareKeyMenus);
+// section·exclude(2026-10-20, 영역별 '다른 메뉴 보기'): 서버 buildRecommendationPage와 같은 규칙
+function recommendationPage(inventory, today, seed, { section, exclude = new Set() } = {}) {
+  if (section === 'recipes') {
+    return { key_menus: [], recipes: recommend(inventory, today, seed, { excludeIds: exclude, limit: RECOMMENDATION_MAX, pool: 15 }) };
+  }
+  const ranked = evaluateAll(inventory, today, seed).filter((r) => r.keyMenu && !exclude.has(r.id)).sort(compareKeyMenus);
   const keyMenus = pickRandom(ranked.slice(0, 9), KEY_MENU_MAX); // 만들기 쉬운 상위 9개 중 3개(서버와 같은 값)
-  const excludeIds = new Set(keyMenus.map((r) => r.id));
+  if (section === 'key_menus') return { key_menus: keyMenus.map(toResponse), recipes: [] };
+  const excludeIds = new Set([...exclude, ...keyMenus.map((r) => r.id)]);
   return {
     key_menus: keyMenus.map(toResponse),
     recipes: recommend(inventory, today, seed, { excludeIds, limit: RECOMMENDATION_MAX, pool: 15 }),
@@ -198,6 +203,31 @@ function searchMock(inventory, today, query) {
     .sort((a, b) => b.rank - a.rank || a.missing.length - b.missing.length || a.title.localeCompare(b.title, 'ko') || a.id - b.id)
     .slice(0, SEARCH_RESULT_MAX)
     .map(({ rank, ...rest }) => rest);
+}
+
+// 추천 검색어(F13 자동완성, 서버 domain/recipeSuggest.js 흉내): 요리명·재료명 중 공백 무시 부분 일치,
+// 앞글자 일치 → 짧은 이름 → 가나다 → 재료 먼저 → id 순, 최대 8개. 메뉴는 id 포함(누르면 상세), 재료는 이름만.
+const SUGGEST_MAX = 8;
+function suggestMock(query) {
+  const compact = (t) => t.replace(/\s+/g, '').toLowerCase();
+  const key = compact(query);
+  const entries = [];
+  const seen = new Set();
+  for (const r of RECIPES) {
+    entries.push({ type: 'recipe', id: r.id, label: r.title });
+    for (const i of r.ingredients) {
+      if (seen.has(i.name)) continue;
+      seen.add(i.name);
+      entries.push({ type: 'ingredient', label: i.name });
+    }
+  }
+  return entries
+    .map((e) => ({ ...e, pos: compact(e.label).indexOf(key) }))
+    .filter((e) => e.pos >= 0)
+    .sort((a, b) => Number(b.pos === 0) - Number(a.pos === 0) || [...a.label].length - [...b.label].length
+      || a.label.localeCompare(b.label, 'ko') || (a.type === b.type ? 0 : a.type === 'ingredient' ? -1 : 1) || (a.id ?? 0) - (b.id ?? 0))
+    .slice(0, SUGGEST_MAX)
+    .map(({ pos, ...e }) => e);
 }
 
 async function handle(url, init) {
@@ -309,7 +339,10 @@ async function handle(url, init) {
     if (sw === 'recommendations') return fail(500, 'SERVER_ERROR', 'mock');
     // 사용자 결정: 추천은 최대 5개(2026-10-15). limit 파라미터는 없다(2026-10-19) — 쿼리가 와도 무시한다.
     // 2026-10-19: { key_menus(대표 메뉴 3개), recipes(일반 추천 5개, 대표 메뉴로 뽑힌 것 제외) }
-    return json(200, recommendationPage(inventory, today, seed));
+    const section = searchParams.get('section') ?? undefined;
+    if (section !== undefined && !['key_menus', 'recipes'].includes(section)) return fail(400, 'INVALID_INPUT', 'section');
+    const exclude = new Set((searchParams.get('exclude') || '').split(',').filter(Boolean).map(Number));
+    return json(200, recommendationPage(inventory, today, seed, { section, exclude }));
   }
 
   // /recipes/search를 /recipes/:id보다 먼저 확인한다(서버 라우터와 같은 순서)
@@ -319,6 +352,15 @@ async function handle(url, init) {
     const query = all.length === 1 ? all[0].normalize('NFC').trim().replace(/\s+/g, ' ') : '';
     if (!query || [...query].length > 30) return fail(400, 'INVALID_INPUT', '검색어를 1~30자로 입력해 주세요.');
     return json(200, searchMock(inventory, today, query));
+  }
+
+  // /recipes/suggest도 /recipes/:id보다 먼저(서버 라우터 순서와 같게)
+  if (method === 'GET' && path === '/recipes/suggest') {
+    if (sw === 'search') return fail(500, 'SERVER_ERROR', 'mock');
+    const all = searchParams.getAll('q');
+    const query = all.length === 1 ? all[0].normalize('NFC').trim().replace(/\s+/g, ' ') : '';
+    if (!query || [...query].length > 30) return fail(400, 'INVALID_INPUT', '검색어를 1~30자로 입력해 주세요.');
+    return json(200, suggestMock(query));
   }
 
   const recipeMatch = /^\/recipes\/(\d+)(\/cook)?$/.exec(path);

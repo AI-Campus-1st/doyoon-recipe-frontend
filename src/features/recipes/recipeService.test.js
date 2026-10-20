@@ -69,3 +69,15 @@ describe('fetchRecipeSearch', () => {
     await expect(fetchRecipeSearch('두부')).rejects.toMatchObject({ code: 'INVALID_RESPONSE' });
   });
 });
+
+describe('fetchSearchSuggestions', () => {
+  it('검색어를 주소에 안전하게 넣어 /recipes/suggest로 요청하고, 배열이 아니면 INVALID_RESPONSE', async () => {
+    const { fetchSearchSuggestions } = await import('./recipeService.js');
+    const transport = vi.fn().mockResolvedValue(new Response('[{"type":"ingredient","label":"두부"}]', { status: 200 }));
+    setTransport(transport);
+    await expect(fetchSearchSuggestions('두 &')).resolves.toEqual([{ type: 'ingredient', label: '두부' }]);
+    expect(transport.mock.calls[0][0]).toBe('/api/recipes/suggest?q=%EB%91%90%20%26');
+    setTransport(vi.fn().mockResolvedValue(new Response('{}', { status: 200 })));
+    await expect(fetchSearchSuggestions('두부')).rejects.toMatchObject({ code: 'INVALID_RESPONSE' });
+  });
+});

@@ -5,12 +5,14 @@
 // - 다른 메뉴 보기(2026-10-20 사용자 결정): 서버가 부를 때마다 추천 레시피를 새로 고르므로 다시 부르기만 하면 된다.
 //   다시 부르는 동안(status loading + 이전 data 있음)은 뼈대 화면 대신 지금 내용을 그대로 두고 목록에 aria-busy만 표시한다
 //   → 화면이 깜빡이지 않고, 누른 버튼도 사라지지 않아 키보드 포커스가 그대로 남는다.
+//   버튼 모양(2026-10-20 사용자 결정): 추천 화면과 같이 '추천 레시피' 제목 오른쪽 끝의 작은 새로고침 아이콘(IconButton size sm).
 import { useState } from 'react';
 import CardSurface from '../../../components/ui/CardSurface.jsx';
 import RecipeLinkRow from '../../../components/ui/RecipeLinkRow.jsx';
 import LoadingSkeleton from '../../../components/ui/LoadingSkeleton.jsx';
 import InlineError from '../../../components/ui/InlineError.jsx';
 import Button from '../../../components/ui/Button.jsx';
+import IconButton from '../../../components/ui/IconButton.jsx';
 import Icon from '../../../components/ui/Icon.jsx';
 import { formatUrgentLabel } from '../statusLabel.js';
 import { pickErrorMessage } from '../../../shared/utils/errorMessage.js';
@@ -82,7 +84,20 @@ export default function RescueBanner({ state, onRetry, onOpenRecipe, onAddIngred
         <div className="rescue__recipes">
           {recipes.length > 0 ? (
             <>
-              <h3 id="rescue-recipes-title" className="rescue__sub t-body-strong">추천 레시피</h3>
+              <div className="rescue__sub-row">
+                <h3 id="rescue-recipes-title" className="rescue__sub t-body-strong">추천 레시피</h3>
+                {onRefreshRecipes && (
+                  <IconButton
+                    icon="refresh"
+                    size="sm"
+                    className="section-refresh"
+                    ariaLabel="추천 레시피 다른 메뉴 보기"
+                    title="다른 메뉴 보기"
+                    aria-busy={refreshing || undefined}
+                    onClick={onRefreshRecipes}
+                  />
+                )}
+              </div>
               <ul className="stack-sm" aria-labelledby="rescue-recipes-title" aria-busy={refreshing || undefined}>
                 {recipes.map((r) => (
                   <li key={r.id}>
@@ -90,11 +105,6 @@ export default function RescueBanner({ state, onRetry, onOpenRecipe, onAddIngred
                   </li>
                 ))}
               </ul>
-              {onRefreshRecipes && (
-                <Button variant="text" className="rescue__refresh" onClick={onRefreshRecipes}>
-                  다른 메뉴 보기
-                </Button>
-              )}
             </>
           ) : urgent ? (
             <p className="rescue__none t-body-sm">지금 추천할 레시피가 없어요</p>
