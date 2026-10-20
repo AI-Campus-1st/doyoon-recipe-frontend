@@ -4,8 +4,10 @@ import { describe, it, expect } from 'vitest';
 import { ONE_TOUCH, INITIAL_INVENTORY, RECIPES, MOCK_SEASONINGS, SEASONING_LIST } from './index.js';
 
 describe('개발 목업 데이터', () => {
-  it('원터치는 16개, 모두 {name, category, fridge_days} 모양', () => {
-    expect(ONE_TOUCH).toHaveLength(16);
+  it('원터치는 17개(서버 기준 데이터와 같은 이름·순서·기본 기한), 모두 {name, category, fridge_days} 모양', () => {
+    expect(ONE_TOUCH).toHaveLength(17);
+    expect(ONE_TOUCH.map((o) => o.name)).toEqual(['대파', '양파', '마늘', '애호박', '감자', '당근', '양배추', '표고버섯', '콩나물', '파프리카', '두부', '계란', '우유', '돼지고기', '소고기', '닭가슴살', '햄']);
+    expect(ONE_TOUCH.find((o) => o.name === '햄').fridge_days).toBe(10);
     for (const item of ONE_TOUCH) {
       expect(Object.keys(item).sort()).toEqual(['category', 'fridge_days', 'name']);
       expect(Number.isInteger(item.fridge_days)).toBe(true);
