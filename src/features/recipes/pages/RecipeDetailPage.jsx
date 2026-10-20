@@ -5,17 +5,17 @@
 // - 양념·밥은 등록하지 않아도 '있어요'로 표시된다는 안내 + 목록 보기 시트('필요한 재료' 아래)
 // - H1은 고정 '레시피 상세', 음식명은 H2. 하단 고정 CTA가 마지막 단계를 가리지 않도록 페이지 하단 여백 확보.
 import { useState } from 'react';
-import { useLocation, useNavigate, useParams, Link } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import PageContainer from '../../../components/ui/PageContainer.jsx';
 import AppHeader from '../../../components/ui/AppHeader.jsx';
 import SectionHeader from '../../../components/ui/SectionHeader.jsx';
 import LoadingSkeleton from '../../../components/ui/LoadingSkeleton.jsx';
 import InlineError from '../../../components/ui/InlineError.jsx';
-import EmptyState from '../../../components/ui/EmptyState.jsx';
 import StatusLabel from '../../../components/ui/StatusLabel.jsx';
 import Button from '../../../components/ui/Button.jsx';
 import Icon from '../../../components/ui/Icon.jsx';
 import CookDoneModal from '../components/CookDoneModal.jsx';
+import ErrorPage from '../../../app/ErrorPage.jsx';
 import RecipeImage from '../components/RecipeImage.jsx';
 import AlwaysOwnedNotice from '../components/AlwaysOwnedNotice.jsx';
 import AlwaysOwnedSheetContainer from '../components/AlwaysOwnedSheetContainer.jsx';
@@ -61,6 +61,8 @@ export default function RecipeDetailPage() {
   const recipe = detail.status === 'success' ? detail.data : null;
   // 404(없는 레시피)와 400(/recipes/abc처럼 숫자가 아닌 주소)은 다시 시도해도 결과가 같다 → '찾을 수 없음' 화면
   const notFound = detail.status === 'error' && [400, 404].includes(detail.error?.status);
+  // 2026-10-20 사용자 결정: 없는 레시피는 상세 틀 대신 전체 화면 오류 페이지(홈으로 가기 / 이전 화면으로)
+  if (notFound) return <ErrorPage kind="recipeNotFound" />;
 
   return (
     <PageContainer variant="app" className={recipe ? 'page--with-fixed-cta' : ''}>
@@ -74,17 +76,7 @@ export default function RecipeDetailPage() {
         </div>
       )}
 
-      {notFound && (
-        <EmptyState
-          title="레시피를 찾을 수 없어요"
-          actions={
-            <Link className="btn btn--secondary btn--full" to="/recommendations">
-              추천 목록으로
-            </Link>
-          }
-        />
-      )}
-      {detail.status === 'error' && !notFound && (
+      {detail.status === 'error' && (
         <InlineError message={pickErrorMessage(detail.error, { fallback: '레시피를 불러오지 못했어요.' })} onRetry={detail.reload} />
       )}
 

@@ -217,18 +217,20 @@ describe('S6 상세 + 요리 완료', () => {
     expect(await screen.findByRole('heading', { level: 2, name: '두부조림' })).toBeInTheDocument();
   });
 
-  it('404는 찾을 수 없음 화면', async () => {
+  it('404는 전체 화면 오류 페이지: H1 레시피를 찾을 수 없어요 + 홈으로 가기(2026-10-20)', async () => {
     mockApi({ 'GET /recipes/999': () => [404, NOT_FOUND] });
     renderApp('/recipes/999');
-    expect(await screen.findByText('레시피를 찾을 수 없어요')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: '레시피를 찾을 수 없어요' })).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+    expect(screen.getByRole('button', { name: '홈으로 가기' })).toBeInTheDocument();
   });
 
   it('숫자가 아닌 주소(/recipes/abc → 400)도 찾을 수 없음 화면, 같은 결과뿐인 다시 시도 버튼은 없음', async () => {
     mockApi({ 'GET /recipes/abc': () => [400, INVALID_INPUT] });
     renderApp('/recipes/abc');
-    expect(await screen.findByText('레시피를 찾을 수 없어요')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: '레시피를 찾을 수 없어요' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '다시 시도' })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: '추천 목록으로' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '홈으로 가기' })).toBeInTheDocument();
   });
 
   it('상세를 불러오다 연결이 끊기면 연결 확인 문구 + 다시 시도', async () => {

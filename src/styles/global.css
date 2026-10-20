@@ -215,6 +215,21 @@ button, input { font: inherit; color: inherit; }
 .skeleton--line { height: var(--space-lg); margin-bottom: var(--space-sm); }
 
 /* ---------- EmptyState / InlineError ---------- */
+/* ErrorScreen — 전체 화면 오류 안내(잘못된 주소·화면 오류·없는 레시피, 2026-10-20) */
+.error-screen { text-align: center; }
+.error-screen__icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--space-3xl); height: var(--space-3xl);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-subtle); color: var(--color-warning);
+  margin-bottom: var(--space-lg);
+}
+/* 한국어는 낱말 단위로 줄바꿈(keep-all) — 320px에서 '없어/요'처럼 글자가 홀로 떨어지지 않게 */
+.error-screen__title { font-size: var(--font-headline-sm); word-break: keep-all; }
+.error-screen__desc { word-break: keep-all; }
+.error-screen__title:focus { outline: none; } /* 코드로 준 포커스(낭독기 안내용)는 테두리를 그리지 않는다 */
+.error-screen__desc { margin-top: var(--space-sm); }
+.error-screen__actions { margin-top: var(--space-2xl); display: grid; gap: var(--space-sm); }
 .empty { text-align: center; padding: var(--space-xl) var(--space-lg); background: var(--color-surface); border: var(--size-hairline) dashed var(--color-border); border-radius: var(--radius-card); }
 .empty__title { font-weight: var(--weight-semibold); }
 .empty__desc { margin-top: var(--space-xs); }

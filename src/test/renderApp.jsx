@@ -26,10 +26,12 @@ export function mockApi(routes) {
   return calls;
 }
 
+// path에 배열을 주면 브라우저 기록처럼 쌓인다(마지막이 현재 화면) — '이전 화면으로' 확인용
 export function renderApp(path, { token = 'test-token' } = {}) {
   if (token) window.localStorage.setItem('recipe.auth.token', token);
+  const entries = Array.isArray(path) ? path : [path];
   return render(
-    <MemoryRouter initialEntries={[path]}>
+    <MemoryRouter initialEntries={entries} initialIndex={entries.length - 1}>
       <AppRoutes />
     </MemoryRouter>,
   );
