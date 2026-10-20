@@ -105,14 +105,25 @@ function evaluateAll(inventory, today, seed) {
 // 응답 score는 소수 둘째 자리 반올림, 내부 정렬 필드는 응답에서 뺀다
 const toResponse = ({ usesStock, tieKey, keyMenu, mainCount, ...r }) => ({ ...r, score: Math.round(r.score * 100) / 100 });
 
-function recommend(inventory, today, seed = '', excludeIds = new Set()) {
+// 무작위로 count개 고르기(원래 순서 유지) — 서버 domain/recommend.js pickRandom과 같은 방식
+function pickRandom(list, count) {
+  const idx = list.map((_, i) => i);
+  const n = Math.min(count, idx.length);
+  for (let i = 0; i < n; i += 1) {
+    const j = i + Math.floor(Math.random() * (idx.length - i));
+    [idx[i], idx[j]] = [idx[j], idx[i]];
+  }
+  return idx.slice(0, n).sort((a, b) => a - b).map((i) => list[i]);
+}
+
+// 2026-10-20 사용자 결정(서버와 같은 규칙): 부족 2개 이하만 → 순위 상위 pool개 중 limit개 무작위.
+// 후보가 없으면 대표 메뉴(key_menu)에서만 무작위. 부를 때마다 결과가 달라진다.
+function recommend(inventory, today, seed = '', { excludeIds = new Set(), limit = RECOMMENDATION_MAX, pool = limit } = {}) {
   const evaluated = evaluateAll(inventory, today, seed).filter((r) => !excludeIds.has(r.id));
-  const candidates = evaluated.filter((r) => r.missing.length < 3);
-  // 내 재고를 쓰는 레시피가 하나도 없으면(빈 재고 포함) 전체 레시피를 무작위 순서로(부족 개수 제한 없음)
-  const list = candidates.some((r) => r.usesStock)
-    ? candidates.sort(compareRecommendations) // 정렬은 반올림 전 점수로
-    : evaluated.sort((x, y) => x.tieKey - y.tieKey || x.id - y.id);
-  return list.map(toResponse);
+  const candidates = evaluated.filter((r) => r.missing.length < 3).sort(compareRecommendations); // 정렬은 반올림 전 점수로
+  if (candidates.length) return pickRandom(candidates.slice(0, pool), limit).map(toResponse);
+  const keyMenus = evaluated.filter((r) => r.keyMenu);
+  return pickRandom(keyMenus, limit).map(toResponse);
 }
 
 // 대표 메뉴 영역(서버 recommend.js selectKeyMenus와 같은 규칙, 2026-10-19): key_menu 레시피 중 만들기 쉬운 3개
@@ -129,11 +140,12 @@ export function compareKeyMenus(a, b) {
 const KEY_MENU_MAX = 3;
 
 function recommendationPage(inventory, today, seed) {
-  const keyMenus = evaluateAll(inventory, today, seed).filter((r) => r.keyMenu).sort(compareKeyMenus).slice(0, KEY_MENU_MAX);
+  const ranked = evaluateAll(inventory, today, seed).filter((r) => r.keyMenu).sort(compareKeyMenus);
+  const keyMenus = pickRandom(ranked.slice(0, 9), KEY_MENU_MAX); // 만들기 쉬운 상위 9개 중 3개(서버와 같은 값)
   const excludeIds = new Set(keyMenus.map((r) => r.id));
   return {
     key_menus: keyMenus.map(toResponse),
-    recipes: recommend(inventory, today, seed, excludeIds).slice(0, RECOMMENDATION_MAX),
+    recipes: recommend(inventory, today, seed, { excludeIds, limit: RECOMMENDATION_MAX, pool: 15 }),
   };
 }
 
@@ -287,8 +299,7 @@ async function handle(url, init) {
       .filter((i) => i.status === 'urgent')
       .sort((a, b) => a.d_day - b.d_day)
       .map(({ id, name, d_day }) => ({ id, name, d_day }));
-    const recipes = recommend(inventory, today, seed)
-      .slice(0, 3)
+    const recipes = recommend(inventory, today, seed, { limit: 3, pool: 10 }) // 상위 10개 중 3개(서버와 같은 값)
       .map(({ id, title, cook_time_min }) => ({ id, title, cook_time_min }));
     return json(200, { items, recipes, message: items.length ? '오늘 먼저 써보세요' : '여유 있어요' });
   }

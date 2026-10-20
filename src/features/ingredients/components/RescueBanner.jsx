@@ -1,7 +1,10 @@
 // RescueBanner — 홈 최상단 '오늘의 구조 재료' (docs/design/components/RescueBanner.md)
 // - 입력: GET /api/rescue 상태({status, data, error}) — items(id/name/d_day), recipes(id/title/cook_time_min), message.
 // - 4가지 정상 분기: 임박 있음/없음 × 추천 있음/없음. 로딩·오류는 별도(목록 영역과 독립).
-// - 순수 UI: 레시피 이동·재시도·재료 추가 이동은 상위(HomePage)가 넘긴 콜백으로 처리.
+// - 순수 UI: 레시피 이동·재시도·재료 추가 이동·다른 메뉴 보기는 상위(HomePage)가 넘긴 콜백으로 처리.
+// - 다른 메뉴 보기(2026-10-20 사용자 결정): 서버가 부를 때마다 추천 레시피를 새로 고르므로 다시 부르기만 하면 된다.
+//   다시 부르는 동안(status loading + 이전 data 있음)은 뼈대 화면 대신 지금 내용을 그대로 두고 목록에 aria-busy만 표시한다
+//   → 화면이 깜빡이지 않고, 누른 버튼도 사라지지 않아 키보드 포커스가 그대로 남는다.
 import { useState } from 'react';
 import CardSurface from '../../../components/ui/CardSurface.jsx';
 import RecipeLinkRow from '../../../components/ui/RecipeLinkRow.jsx';
@@ -14,10 +17,11 @@ import { pickErrorMessage } from '../../../shared/utils/errorMessage.js';
 
 const VISIBLE_ITEMS = 3; // 임박 재료가 많으면 3개만 먼저 보여 주고 같은 배너 안에서 펼친다(UI 제안)
 
-export default function RescueBanner({ state, onRetry, onOpenRecipe, onAddIngredient }) {
+export default function RescueBanner({ state, onRetry, onOpenRecipe, onAddIngredient, onRefreshRecipes }) {
   const [expanded, setExpanded] = useState(false);
+  const refreshing = state.status === 'loading' && Boolean(state.data);
 
-  if (state.status === 'loading') {
+  if (state.status === 'loading' && !refreshing) {
     return (
       <section aria-labelledby="rescue-title" className="rescue">
         <h2 id="rescue-title" className="sr-only">오늘의 구조 재료</h2>
@@ -78,14 +82,19 @@ export default function RescueBanner({ state, onRetry, onOpenRecipe, onAddIngred
         <div className="rescue__recipes">
           {recipes.length > 0 ? (
             <>
-              <h3 className="rescue__sub t-body-strong">추천 레시피</h3>
-              <ul className="stack-sm">
+              <h3 id="rescue-recipes-title" className="rescue__sub t-body-strong">추천 레시피</h3>
+              <ul className="stack-sm" aria-labelledby="rescue-recipes-title" aria-busy={refreshing || undefined}>
                 {recipes.map((r) => (
                   <li key={r.id}>
                     <RecipeLinkRow id={r.id} title={r.title} cookTimeMin={r.cook_time_min} onOpen={onOpenRecipe} />
                   </li>
                 ))}
               </ul>
+              {onRefreshRecipes && (
+                <Button variant="text" className="rescue__refresh" onClick={onRefreshRecipes}>
+                  다른 메뉴 보기
+                </Button>
+              )}
             </>
           ) : urgent ? (
             <p className="rescue__none t-body-sm">지금 추천할 레시피가 없어요</p>

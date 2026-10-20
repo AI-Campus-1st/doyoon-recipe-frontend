@@ -116,6 +116,7 @@ export default function HomePage() {
           onRetry={rescue.reload}
           onOpenRecipe={(id) => navigate(`/recipes/${id}`)}
           onAddIngredient={goAdd}
+          onRefreshRecipes={rescue.reload} // 구조 배너만 다시 부름(재고 목록은 그대로) — 서버가 새 레시피를 고른다
         />
 
         <IngredientList

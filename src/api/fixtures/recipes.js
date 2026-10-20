@@ -50,6 +50,12 @@ export const RECOMMENDATIONS_WITH_KEY_MENUS = {
   ],
 };
 
+// GET /recommendations — 다시 불렀을 때 두 영역 모두 다른 메뉴(2026-10-20: 부를 때마다 새 메뉴)
+export const RECOMMENDATIONS_SHUFFLED = {
+  key_menus: [{ id: 9, title: '김치찌개', cook_time_min: 25, score: 0, urgent_used: [], missing: ['김치'] }],
+  recipes: [{ id: 52, title: '대파계란볶음밥', cook_time_min: 10, score: 1, urgent_used: [], missing: [] }],
+};
+
 // GET /recommendations — 일반 추천은 비었지만 대표 메뉴는 있음
 export const RECOMMENDATIONS_ONLY_KEY_MENUS = {
   key_menus: [{ id: 7, title: '된장국', cook_time_min: 20, score: 1.5, urgent_used: [], missing: ['두부'] }],

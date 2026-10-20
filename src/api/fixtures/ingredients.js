@@ -16,6 +16,12 @@ export const RESCUE = {
   message: '오늘 먼저 써보세요',
 };
 
+// GET /rescue — 같은 재고로 다시 불렀을 때 다른 추천 레시피(2026-10-20: 부를 때마다 새 메뉴)
+export const RESCUE_SHUFFLED = {
+  ...RESCUE,
+  recipes: [{ id: 52, title: '대파계란볶음밥', cook_time_min: 10 }, { id: 63, title: '두부된장국', cook_time_min: 20 }],
+};
+
 // GET /rescue — 임박 재료가 없을 때(정상 빈 상태)
 export const RESCUE_EMPTY = { items: [], recipes: [], message: '여유 있어요' };
 
