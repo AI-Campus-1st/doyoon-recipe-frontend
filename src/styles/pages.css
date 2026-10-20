@@ -1,0 +1,233 @@
+/*
+ * 화면 전용 배치 스타일 (S1~S6, 화면 소유 복합 컴포넌트)
+ * - 공통 컴포넌트 스타일은 global.css, 값은 tokens.css 변수만 사용.
+ */
+
+/* ---------- 공통 배치 도우미 ---------- */
+.stack-sm { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-sm); }
+.stack-md { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-md); }
+.stack-lg { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-lg); }
+
+/* ---------- S1 로그인 / S2 회원가입 ---------- */
+.auth-intro { text-align: center; }
+.auth-intro__brand {
+  display: inline-flex; align-items: center; gap: var(--space-sm);
+  font-size: var(--font-body); font-weight: var(--weight-bold); line-height: var(--lh-1-4);
+  margin-bottom: var(--space-sm);
+}
+.auth-intro__logo {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--space-2xl); height: var(--space-2xl);
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-soft); color: var(--color-primary);
+}
+.auth-intro__desc { margin-top: var(--space-sm); }
+.auth-card { margin-top: var(--space-auth-form-gap); }
+
+/* 사용자 확정(2026-10-14): 두 간격을 동시에 유지. 필드 그룹 wrapper 사이 간격으로 구현한다. */
+.login-form { display: flex; flex-direction: column; }
+.login-form__group + .login-form__group { margin-top: var(--space-login-field-gap); }   /* 아이디 입력칸 → 비밀번호 라벨 */
+.login-form__submit { margin-top: var(--space-login-button-gap); display: grid; gap: var(--space-sm); } /* 비밀번호 입력칸 → 로그인 버튼 */
+
+.auth-switch { margin-top: var(--space-card-lg); text-align: center; }
+.auth-switch__link {
+  display: inline-flex; align-items: center; min-height: var(--size-touch);
+  color: var(--color-primary); font-weight: var(--weight-semibold);
+}
+
+.signup-intro { margin: var(--space-sm) 0 var(--space-xl); }
+.signup-intro__headline {
+  font-size: var(--font-headline-sm); font-weight: var(--weight-bold); line-height: var(--lh-1-3);
+  margin-bottom: var(--space-sm);
+}
+.signup-submit { margin-top: var(--space-sm); display: grid; gap: var(--space-sm); }
+
+/* ---------- S3 홈 ---------- */
+.home-sections { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-2xl); } /* minmax(0,…): 긴 재료명이 열을 넓혀 화면이 가로로 밀리지 않게 */
+.rescue__card { border-radius: var(--radius-sheet); padding: var(--space-card-lg); }
+.rescue__title { display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-xs); }
+.rescue__title--urgent { color: var(--color-urgent); }
+.rescue__items { margin-top: var(--space-md); display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-sm); }
+.rescue__item { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); }
+.rescue__name { flex: 1 1 0; } /* 긴 이름은 말줄임, 배지는 같은 줄 오른쪽 유지 */
+.rescue__item .badge { flex: none; }
+.rescue__recipes { margin-top: var(--space-lg); }
+.rescue__sub { margin-bottom: var(--space-sm); }
+.rescue__none { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-sm); color: var(--color-text-secondary); }
+
+.recipe-link-row {
+  display: flex; align-items: center; gap: var(--space-sm); width: 100%;
+  min-height: var(--size-touch);
+  padding: var(--space-md) var(--space-md);
+  background: var(--color-surface);
+  border: var(--size-hairline) solid var(--color-border);
+  border-radius: var(--radius-control);
+  text-align: left; cursor: pointer;
+  transition: border-color var(--motion-press);
+}
+.recipe-link-row:hover { border-color: var(--color-primary); }
+.recipe-link-row__title {
+  flex: 1; min-width: 0; font-weight: var(--weight-semibold);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.recipe-link-row__meta { flex: none; }
+
+.inventory__list {
+  background: var(--color-surface);
+  border: var(--size-hairline) solid var(--color-border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+.inventory__list li + li { border-top: var(--size-hairline) solid var(--color-border); }
+.inventory__row {
+  display: flex; align-items: center; gap: var(--space-sm);
+  width: 100%; min-height: var(--size-header);
+  padding: var(--space-md) var(--space-lg);
+  background: transparent; border: 0; text-align: left; cursor: pointer;
+  transition: background-color var(--motion-press);
+}
+.inventory__row:hover { background: var(--color-surface-subtle); }
+.inventory__row:focus-visible { outline-offset: calc(var(--focus-ring-width) * -1); }
+.inventory__content { flex: 1 1 auto; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-xs) var(--space-sm); }
+.inventory__main { flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
+.inventory__chevron { display: inline-flex; }
+.inventory__bulk { margin-top: var(--space-md); }
+.inventory__note { margin-top: var(--space-md); }
+
+.home-cta { display: grid; gap: var(--space-md); }
+
+/* ---------- S4 재료 등록 ---------- */
+.add-sections { display: grid; gap: var(--space-2xl); }
+.one-touch__group + .one-touch__group { margin-top: var(--space-lg); }
+.one-touch__category { margin-bottom: var(--space-sm); color: var(--color-text-secondary); }
+.one-touch__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-sm);
+}
+.one-touch__grid > [role='status'] { display: contents; }
+.one-touch__tile {
+  display: flex; align-items: center; justify-content: center; gap: var(--space-xs);
+  width: 100%; min-height: var(--size-tile-lg);
+  padding: var(--space-sm);
+  background: var(--color-surface);
+  border: var(--size-hairline) solid var(--color-border);
+  border-radius: var(--radius-control);
+  font-size: var(--font-body); font-weight: var(--weight-semibold); line-height: var(--lh-1-4);
+  cursor: pointer;
+  transition: background-color var(--motion-press), border-color var(--motion-press);
+}
+.one-touch__tile:hover:not(:disabled) { border-color: var(--color-primary); }
+.one-touch__tile:active:not(:disabled) { background: var(--color-primary-soft); }
+.one-touch__tile:disabled { opacity: var(--opacity-disabled); cursor: not-allowed; }
+.one-touch__tile[aria-busy='true'] { opacity: 1; background: var(--color-primary-soft); }
+.one-touch .inline-error { margin-top: var(--space-md); }
+.manual { padding-top: var(--space-xl); border-top: var(--size-hairline) solid var(--color-border); }
+
+/* 320~359px: 원터치 2열 */
+@media (max-width: 359px) {
+  .one-touch__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+/* 431px 이상(앱 프레임 안): 4열 */
+@media (min-width: 431px) {
+  .one-touch__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* ---------- S5 추천 ---------- */
+.recs { margin-top: var(--space-xl); padding-bottom: var(--space-2xl); }
+/* 대표 메뉴 영역(위) — 아래 일반 추천과 같은 카드, 영역 사이 간격만 둔다 */
+.recs--key { padding-bottom: 0; }
+.recipe-card { display: grid; gap: var(--space-xs); padding: var(--space-lg); }
+.recipe-card__head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-sm); }
+.recipe-card__title { min-width: 0; }
+.recipe-card__meta { display: inline-flex; align-items: center; gap: var(--space-xs); }
+.recipe-card__urgent { color: var(--color-urgent); font-weight: var(--weight-semibold); }
+.recipe-card__missing { justify-self: start; margin-top: var(--space-xs); }
+.recipe-card__missing-text { color: var(--color-warning); font-weight: var(--weight-semibold); }
+
+/* 추천 화면 맨 아래 '레시피 검색' 진입 (F13) */
+.recs-search { display: grid; gap: var(--space-sm); padding-bottom: var(--space-2xl); text-align: center; }
+
+/* ---------- S7 레시피 검색 (F13) ---------- */
+.search-form { display: flex; align-items: flex-start; gap: var(--space-sm); margin-top: var(--space-lg); }
+.search-form__field { flex: 1 1 auto; min-width: 0; }
+/* 라벨 줄 높이만큼 내려서 버튼을 입력칸과 같은 줄에 맞춘다(오류 문구가 생겨도 버튼은 입력칸 옆에 고정) */
+.search-form__submit { flex: none; margin-top: calc(var(--font-small) * var(--lh-1-45) + var(--space-label-gap)); }
+.search-results { margin-top: var(--space-xl); padding-bottom: var(--space-2xl); }
+.search-results__count { margin-bottom: var(--space-sm); }
+.search-results__note { margin-bottom: var(--space-md); }
+
+/* ---------- S6 상세 ---------- */
+.recipe-image {
+  position: relative; margin: 0 0 var(--space-lg);
+  aspect-ratio: 16 / 9; overflow: hidden;
+  border-radius: var(--radius-card);
+  background: var(--color-surface-subtle);
+}
+.recipe-image__img { display: block; width: 100%; height: 100%; object-fit: cover; transition: opacity var(--motion-overlay); }
+.recipe-image--loading .recipe-image__img { opacity: 0; }
+.recipe-image__status {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  color: var(--color-text-muted);
+}
+.detail__title { font-size: var(--font-headline-sm); font-weight: var(--weight-bold); line-height: var(--lh-1-3); }
+.detail__meta { display: flex; align-items: center; gap: var(--space-xs); margin-top: var(--space-xs); }
+.detail__section { margin-top: var(--space-xl); }
+.detail__ingredients { padding: 0; overflow: hidden; }
+.detail__ingredient {
+  display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap;
+  min-height: var(--size-control-md); padding: var(--space-sm) var(--space-lg);
+}
+.detail__ingredient + .detail__ingredient { border-top: var(--size-hairline) solid var(--color-border); }
+.detail__ing-name { flex: 1 1 auto; min-width: 0; }
+.detail__steps { display: grid; gap: var(--space-md); }
+.detail__step { display: flex; gap: var(--space-md); align-items: flex-start; }
+.detail__step-no {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: var(--space-xl); height: var(--space-xl); margin-top: var(--space-xs);
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-soft); color: var(--color-primary);
+  font-size: var(--font-small); font-weight: var(--weight-bold);
+}
+.detail-gap { height: var(--space-lg); }
+
+.fixed-cta {
+  position: fixed; inset: auto 0 0 0; z-index: var(--layer-header);
+  background: var(--color-canvas);
+  padding: var(--space-md) var(--space-lg) calc(var(--space-md) + env(safe-area-inset-bottom));
+  border-top: var(--size-hairline) solid var(--color-border);
+}
+.fixed-cta__inner { max-width: var(--layout-app-max); margin-inline: auto; }
+
+.cook-modal__hint { margin-bottom: var(--space-sm); }
+.cook-modal__list { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-sm); } /* fieldset 기본 min-width: min-content도 풀어 줌 */
+.cook-modal__none { color: var(--color-text-secondary); }
+.cook-modal__summary { margin-top: var(--space-lg); font-weight: var(--weight-semibold); }
+.check-row {
+  display: flex; align-items: center; gap: var(--space-md);
+  min-height: var(--size-control-md); padding: var(--space-sm) var(--space-md);
+  border: var(--size-hairline) solid var(--color-border); border-radius: var(--radius-control);
+  cursor: pointer;
+}
+.check-row:has(:checked) { background: var(--color-primary-soft); border-color: var(--color-primary); }
+.check-row__box { width: var(--space-xl); height: var(--space-xl); accent-color: var(--color-primary); flex: none; }
+.check-row__label { flex: 1 1 auto; }
+
+/* ---------- 항상 있다고 보는 재료 (S5·S6 안내 + 하단 시트) ---------- */
+.always-owned-note {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 0 var(--space-xs);
+  margin-top: var(--space-sm);
+}
+.always-owned-note__btn { padding-inline: var(--space-xs); }
+.always-owned__desc { margin-bottom: var(--space-lg); }
+.always-owned__group + .always-owned__group { margin-top: var(--space-lg); }
+.always-owned__label { margin-bottom: var(--space-sm); }
+.always-owned__chips { display: flex; flex-wrap: wrap; gap: var(--space-sm); }
+.always-owned__chip {
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-subtle);
+  border: var(--size-hairline) solid var(--color-border);
+  font-size: var(--font-small); font-weight: var(--weight-medium); line-height: var(--lh-1-45);
+}
+.always-owned__foot { margin-top: var(--space-lg); }

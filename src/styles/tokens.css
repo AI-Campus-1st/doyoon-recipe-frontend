@@ -1,0 +1,111 @@
+/*
+ * 디자인 토큰 → CSS 변수
+ * - 출처: product/docs/design/Tokens.md (실제 값의 유일한 기준). 값을 바꿀 때는 Tokens.md를 먼저 수정하고 여기를 맞춘다.
+ * - 사용처: 모든 컴포넌트 CSS(global.css 등)는 숫자/색을 직접 쓰지 않고 var(--…)만 참조한다.
+ * - 이름 규칙: colors.primary → --color-primary, spacing.Large → --space-large 처럼 그룹-이름(kebab-case).
+ */
+:root {
+  /* colors */
+  --color-canvas: #FAF9F5;
+  --color-surface: #FFFFFF;
+  --color-surface-subtle: #F2F5EE;
+  --color-primary: #347A46;
+  --color-primary-hover: #286337;
+  --color-primary-soft: #E9F4E8;
+  --color-text: #223027;
+  --color-text-secondary: #59665D;
+  --color-text-muted: #69746D;
+  --color-border: #DCE4DB;
+  --color-focus: #245FCA;
+  --color-urgent: #B42318;
+  --color-urgent-bg: #FFF0ED;
+  --color-warning: #8A5800;
+  --color-warning-bg: #FFF5D6;
+  --color-ok: #287343;
+  --color-ok-bg: #EAF6ED;
+  --color-expired: #66706B;
+  --color-expired-bg: #EDF0EE;
+  --color-error: var(--color-urgent); /* alias colors.error → colors.urgent */
+  --color-scrim: rgba(34, 48, 39, 0.32);
+
+  /* spacing */
+  --space-xs: 4px;            /* spacing.ExtraSmall */
+  --space-label-gap: 6px;     /* spacing.LabelGap */
+  --space-sm: 8px;            /* spacing.Small */
+  --space-md: 12px;           /* spacing.Medium */
+  --space-lg: 16px;           /* spacing.Large */
+  --space-card-lg: 20px;      /* spacing.CardPaddingLarge */
+  --space-xl: 24px;           /* spacing.ExtraLarge */
+  --space-2xl: 32px;          /* spacing.DoubleExtraLarge */
+  --space-auth-form-gap: 36px;/* spacing.AuthFormGap */
+  --space-3xl: 40px;          /* spacing.TripleExtraLarge */
+  --space-auth-top-lg: 88px;  /* spacing.AuthTopLarge */
+  --space-login-field-gap: var(--space-lg);  /* spacing.LoginFieldGap → spacing.Large */
+  --space-login-button-gap: var(--space-lg); /* spacing.LoginButtonGap → spacing.Large */
+
+  /* size */
+  --size-tiny: 2px;
+  --size-hairline: 1px;
+  --size-touch: 44px;          /* size.TouchTarget */
+  --size-control-md: 48px;     /* size.ControlMedium = ButtonMedium */
+  --size-control-lg: 52px;     /* size.ControlLarge = ButtonLarge */
+  --size-tile-lg: 60px;        /* size.TileLarge */
+  --size-header: 64px;         /* size.Header */
+
+  /* layout */
+  --layout-app-max: 480px;
+  --layout-expanded-max: 720px;
+
+  /* radius */
+  --radius-sm: 8px;
+  --radius-control: 12px;
+  --radius-card: 16px;
+  --radius-sheet: 20px;
+  --radius-pill: 9999px;
+
+  /* typography sizes */
+  --font-page-title: 28px;
+  --font-headline-sm: 24px;
+  --font-section-title: 21px;
+  --font-card-title: 18px;
+  --font-body: 16px;
+  --font-small: 14px;
+  --font-caption: 12px;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  --lh-1-3: 1.3;
+  --lh-1-35: 1.35;
+  --lh-1-4: 1.4;
+  --lh-1-45: 1.45;
+  --lh-1-5: 1.5;
+  --lh-1-55: 1.55;
+
+  /* shadow */
+  --shadow-header-subtle: 0 0.25px 2px rgba(0, 0, 0, 0.04);
+  --shadow-header-original: 0 1px 8px rgba(0, 0, 0, 0.04);
+  --shadow-overlay: 0 12px 32px rgba(25, 44, 30, .14);
+
+  /* focus / state / layer / motion */
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+  --opacity-disabled: 0.5;
+  --layer-header: 10;
+  --layer-overlay: 100;
+  --layer-nested-dialog: 110;
+  --layer-toast: 120;
+  --motion-press: 120ms;
+  --motion-overlay: 180ms;
+
+  --font-family: 'Pretendard', 'Noto Sans KR', system-ui, sans-serif;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-press: 0ms;   /* motion.Reduced */
+    --motion-overlay: 0ms; /* motion.Reduced */
+  }
+}
