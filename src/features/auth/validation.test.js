@@ -33,14 +33,16 @@ describe('validateSignup', () => {
       '비밀번호가 너무 길어요. 영문·숫자 기준 72자 이하로 입력해 주세요.',
     );
   });
-  // 사용자 결정(2026-10-20): 공백만으로 된 비밀번호는 거부(서버도 400)
-  it('비밀번호가 공백만이면 8자 이상이어도 거부, 공백이 섞인 것은 허용', () => {
-    for (const blank of [' '.repeat(8), ' \t\n\u3000    ']) {
-      expect(validateSignup({ ...ok, password: blank, confirmPassword: blank }).password).toBe(
-        '비밀번호는 공백만으로 만들 수 없어요.',
+  // 사용자 결정(2026-10-20 변경): 비밀번호에 공백이 한 자리라도 있으면 거부(서버도 400)
+  it('비밀번호에 공백(띄어쓰기·탭·줄바꿈·전각 공백)이 하나라도 있으면 거부', () => {
+    for (const spaced of [' '.repeat(8), ' \t\n\u3000    ', 'pass word1', '  pass12  ', 'password1 ', 'password\t1', 'pass\u3000word1']) {
+      expect(validateSignup({ ...ok, password: spaced, confirmPassword: spaced }).password).toBe(
+        '비밀번호에는 공백을 넣을 수 없어요.',
       );
     }
-    expect(validateSignup({ ...ok, password: 'pass word', confirmPassword: 'pass word' }).password).toBeUndefined();
+  });
+  it('공백 검사보다 길이 안내가 먼저(7자 + 공백은 8자 안내)', () => {
+    expect(validateSignup({ ...ok, password: 'pass wd', confirmPassword: 'pass wd' }).password).toBe('비밀번호는 8자 이상 입력해 주세요.');
   });
   it('확인값 불일치', () => {
     expect(validateSignup({ ...ok, confirmPassword: 'password2' }).confirmPassword).toBe('비밀번호가 일치하지 않아요.');

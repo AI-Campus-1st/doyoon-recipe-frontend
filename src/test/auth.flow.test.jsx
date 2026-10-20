@@ -86,6 +86,20 @@ describe('S2 회원가입', () => {
     expect(screen.getByLabelText('아이디')).toHaveValue('cook01');
   });
 
+  it('비밀번호에 공백이 있으면 비밀번호 칸 아래 오류, 요청하지 않음(사용자 결정 2026-10-20)', async () => {
+    const calls = mockApi({});
+    renderApp('/signup', { token: null });
+    const user = userEvent.setup();
+    expect(screen.getByText('공백 없이 8자 이상 입력해 주세요.')).toBeInTheDocument();
+    await user.type(screen.getByLabelText('아이디'), 'cook01');
+    await user.type(screen.getByLabelText('비밀번호'), 'pass word1');
+    await user.type(screen.getByLabelText('비밀번호 확인'), 'pass word1');
+    await user.click(screen.getByRole('button', { name: '회원가입' }));
+    expect(screen.getByText('비밀번호에는 공백을 넣을 수 없어요.')).toBeInTheDocument();
+    expect(screen.getByLabelText('비밀번호')).toHaveAttribute('aria-invalid', 'true');
+    expect(calls).toHaveLength(0);
+  });
+
   it('형식 오류면 요청하지 않는다', async () => {
     const calls = mockApi({});
     renderApp('/signup', { token: null });

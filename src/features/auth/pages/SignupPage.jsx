@@ -86,7 +86,7 @@ export default function SignupPage() {
           onChange={update('password')}
           placeholder="8자 이상"
           autoComplete="new-password"
-          helperText="8자 이상 입력해 주세요."
+          helperText="공백 없이 8자 이상 입력해 주세요."
           error={errors.password}
         />
         <PasswordField

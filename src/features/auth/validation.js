@@ -11,7 +11,7 @@ const byteLength = (text) => new TextEncoder().encode(text).length;
 export const MESSAGES = {
   username: '아이디는 영문·숫자 4~20자로 입력해 주세요.',
   password: '비밀번호는 8자 이상 입력해 주세요.',
-  passwordBlank: '비밀번호는 공백만으로 만들 수 없어요.',
+  passwordSpace: '비밀번호에는 공백을 넣을 수 없어요.',
   passwordTooLong: '비밀번호가 너무 길어요. 영문·숫자 기준 72자 이하로 입력해 주세요.',
   confirm: '비밀번호가 일치하지 않아요.',
   loginUsername: '아이디를 입력해 주세요.',
@@ -22,8 +22,9 @@ export function validateSignup({ username, password, confirmPassword }) {
   const errors = {};
   if (!USERNAME_RULE.test(username)) errors.username = MESSAGES.username;
   if ((password ?? '').length < 8) errors.password = MESSAGES.password;
-  // 공백만으로 된 비밀번호는 거부(사용자 결정 2026-10-20, 서버도 400). 공백이 섞인 것은 허용하고 다듬지 않는다
-  else if (/^\s*$/.test(password)) errors.password = MESSAGES.passwordBlank;
+  // 공백(띄어쓰기·탭·줄바꿈·전각 공백)이 한 자리라도 있으면 거부(사용자 결정 2026-10-20 변경, 서버도 400).
+  // 길이 안내가 먼저: 7자 + 공백이면 '8자 이상'을 먼저 보여 준다. 로그인 검사(validateLogin)는 그대로 둔다.
+  else if (/\s/.test(password)) errors.password = MESSAGES.passwordSpace;
   else if (byteLength(password) > PASSWORD_MAX_BYTES) errors.password = MESSAGES.passwordTooLong;
   if (password !== confirmPassword) errors.confirmPassword = MESSAGES.confirm;
   return errors;
