@@ -11,7 +11,8 @@ export function getCookCandidates(ingredients) {
     if (item.owned !== true || item.my_ingredient_id == null) continue;
     if (seen.has(item.my_ingredient_id)) continue;
     seen.add(item.my_ingredient_id);
-    result.push({ id: item.my_ingredient_id, name: item.name });
+    // 대체 재료(2026-10-20)는 실제로 지울 재고 이름을 앞에: '파 (대파 대신)'
+    result.push({ id: item.my_ingredient_id, name: item.substitute ? `${item.substitute} (${item.name} 대신)` : item.name });
   }
   return result;
 }

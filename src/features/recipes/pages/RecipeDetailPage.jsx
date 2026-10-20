@@ -96,7 +96,8 @@ export default function RecipeDetailPage() {
                 <li key={`${ing.name}-${index}`} className="detail__ingredient">
                   <span className="t-body-strong detail__ing-name">{ing.name}</span>
                   {ing.amount && <span className="t-body-sm text-secondary detail__ing-amount">{ing.amount}</span>}
-                  <StatusLabel owned={ing.owned} />
+                  <StatusLabel owned={ing.owned} substitute={Boolean(ing.substitute)} />
+                  {ing.substitute && <span className="t-body-sm text-secondary detail__ing-sub">가진 재료: {ing.substitute}</span>}
                 </li>
               ))}
             </ul>

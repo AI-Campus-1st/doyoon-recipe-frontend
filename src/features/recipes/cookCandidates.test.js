@@ -36,3 +36,12 @@ describe('buildCookBody', () => {
     expect(buildCookBody(new Set([3, 7]))).toEqual({ used_ingredient_ids: [3, 7] });
   });
 });
+
+describe('getCookCandidates — 대체 재료(2026-10-20)', () => {
+  it('substitute가 있으면 지울 재고 이름을 앞에, 레시피 재료를 괄호로: "파 (대파 대신)"', () => {
+    expect(getCookCandidates([
+      { name: '대파', amount: '1대', is_seasoning: false, owned: true, my_ingredient_id: 9, substitute: '파' },
+      { name: '계란', amount: '2개', is_seasoning: false, owned: true, my_ingredient_id: 4, substitute: null },
+    ])).toEqual([{ id: 9, name: '파 (대파 대신)' }, { id: 4, name: '계란' }]);
+  });
+});

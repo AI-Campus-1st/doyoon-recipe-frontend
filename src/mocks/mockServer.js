@@ -103,7 +103,8 @@ function evaluateAll(inventory, today, seed) {
 }
 
 // 응답 score는 소수 둘째 자리 반올림, 내부 정렬 필드는 응답에서 뺀다
-const toResponse = ({ usesStock, tieKey, keyMenu, mainCount, ...r }) => ({ ...r, score: Math.round(r.score * 100) / 100 });
+// substitutes: 목업은 동의어(includes)가 없어 대체가 생기지 않으므로 늘 [] — 응답 모양만 서버와 맞춘다(2026-10-20)
+const toResponse = ({ usesStock, tieKey, keyMenu, mainCount, ...r }) => ({ ...r, score: Math.round(r.score * 100) / 100, substitutes: [] });
 
 // 무작위로 count개 고르기(원래 순서 유지) — 서버 domain/recommend.js pickRandom과 같은 방식
 function pickRandom(list, count) {
@@ -192,7 +193,7 @@ function searchMock(inventory, today, query) {
     .filter(({ rank }) => rank > 0)
     .map(({ r, rank }) => {
       const { urgent_used, missing } = evaluated.get(r.id);
-      return { id: r.id, title: r.title, cook_time_min: r.cook_time_min, urgent_used, missing, rank };
+      return { id: r.id, title: r.title, cook_time_min: r.cook_time_min, urgent_used, missing, substitutes: [], rank };
     })
     .sort((a, b) => b.rank - a.rank || a.missing.length - b.missing.length || a.title.localeCompare(b.title, 'ko') || a.id - b.id)
     .slice(0, SEARCH_RESULT_MAX)
@@ -337,7 +338,7 @@ async function handle(url, init) {
           const mine = usable.find((u) => u.name === ing.name);
           // 양념·밥은 항상 보유. 밥은 실제 재고가 있으면 그 재고를 연결해 요리 완료로 지울 수 있게 한다(사용자 결정 2026-10-19)
           const alwaysOwned = ing.is_seasoning || ing.name === '밥';
-          return { ...ing, owned: alwaysOwned || Boolean(mine), my_ingredient_id: ing.is_seasoning ? null : mine?.id ?? null };
+          return { ...ing, owned: alwaysOwned || Boolean(mine), my_ingredient_id: ing.is_seasoning ? null : mine?.id ?? null, substitute: null };
         }),
       });
     }
