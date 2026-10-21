@@ -42,9 +42,9 @@ export function assertSearchResults(data) {
 export const fetchRecipeSearch = (query, signal) =>
   request(`/recipes/search?q=${encodeURIComponent(query)}`, { signal }).then(assertSearchResults);
 
-// 추천 검색어(F13 자동완성): GET /recipes/suggest?q=… → [{ type:'recipe', id, label } | { type:'ingredient', label }] (최대 8개, 서버가 정렬)
+// 추천 레시피(F13 자동완성): GET /recipes/suggest?q=… → [{ type:'recipe', id, label }] (최대 8개, 서버가 정렬, 2026-10-21부터 레시피만)
 // - 모양 검사는 검색과 같은 기준(배열이 아니면 INVALID_RESPONSE). 실패를 어떻게 보일지는 화면(조용히 목록 숨김)이 정한다.
-export const fetchSearchSuggestions = (query, signal) =>
+export const fetchRecipeSuggestions = (query, signal) =>
   request(`/recipes/suggest?q=${encodeURIComponent(query)}`, { signal }).then(assertSearchResults);
 
 // 상세 응답 모양 검사(사용자 결정 2026-10-15: 빠진 응답은 '오류'로 처리)

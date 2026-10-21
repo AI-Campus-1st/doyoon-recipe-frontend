@@ -205,29 +205,31 @@ function searchMock(inventory, today, query) {
     .map(({ rank, ...rest }) => rest);
 }
 
-// 추천 검색어(F13 자동완성, 서버 domain/recipeSuggest.js 흉내): 요리명·재료명 중 공백 무시 부분 일치,
-// 앞글자 일치 → 짧은 이름 → 가나다 → 재료 먼저 → id 순, 최대 8개. 메뉴는 id 포함(누르면 상세), 재료는 이름만.
+// 추천 검색어(서버 domain/recipeSuggest.js 흉내, 2026-10-21): 레시피 검색 = 요리명만, 재료 등록 = 재료명만(양념 제외).
+// 공백 무시 부분 일치, 앞글자 일치 → 짧은 이름 → 가나다 → id 순, 최대 8개.
 const SUGGEST_MAX = 8;
-function suggestMock(query) {
+function rankSuggest(entries, query) {
   const compact = (t) => t.replace(/\s+/g, '').toLowerCase();
   const key = compact(query);
-  const entries = [];
-  const seen = new Set();
-  for (const r of RECIPES) {
-    entries.push({ type: 'recipe', id: r.id, label: r.title });
-    for (const i of r.ingredients) {
-      if (seen.has(i.name)) continue;
-      seen.add(i.name);
-      entries.push({ type: 'ingredient', label: i.name });
-    }
-  }
   return entries
-    .map((e) => ({ ...e, pos: compact(e.label).indexOf(key) }))
-    .filter((e) => e.pos >= 0)
-    .sort((a, b) => Number(b.pos === 0) - Number(a.pos === 0) || [...a.label].length - [...b.label].length
-      || a.label.localeCompare(b.label, 'ko') || (a.type === b.type ? 0 : a.type === 'ingredient' ? -1 : 1) || (a.id ?? 0) - (b.id ?? 0))
+    .map((e) => ({ e, pos: compact(e.label).indexOf(key) }))
+    .filter(({ pos }) => pos >= 0)
+    .sort((a, b) => Number(b.pos === 0) - Number(a.pos === 0) || [...a.e.label].length - [...b.e.label].length
+      || a.e.label.localeCompare(b.e.label, 'ko') || (a.e.id ?? 0) - (b.e.id ?? 0))
     .slice(0, SUGGEST_MAX)
-    .map(({ pos, ...e }) => e);
+    .map(({ e }) => e);
+}
+const recipeSuggestMock = (query) => rankSuggest(RECIPES.map((r) => ({ type: 'recipe', id: r.id, label: r.title })), query);
+function ingredientSuggestMock(query) {
+  const seasonings = new Set(MOCK_SEASONINGS); // 양념만 뺀다(밥은 실제 재고로 등록 가능)
+  const names = new Set([...ONE_TOUCH.map((o) => o.name), ...RECIPES.flatMap((r) => r.ingredients.filter((i) => !i.is_seasoning).map((i) => i.name))]);
+  return rankSuggest([...names].filter((n) => !seasonings.has(n)).map((label) => ({ type: 'ingredient', label })), query);
+}
+// 추천 검색어 q 규칙(검색과 같음): 정리 후 1~30자 하나, 아니면 null
+function readSuggestQuery(searchParams) {
+  const all = searchParams.getAll('q');
+  const query = all.length === 1 ? all[0].normalize('NFC').trim().replace(/\s+/g, ' ') : '';
+  return query && [...query].length <= 30 ? query : null;
 }
 
 async function handle(url, init) {
@@ -273,6 +275,13 @@ async function handle(url, init) {
   if (method === 'GET' && path === '/one-touch') {
     if (sw === 'one-touch') return fail(500, 'SERVER_ERROR', 'mock');
     return json(200, ONE_TOUCH);
+  }
+
+  if (method === 'GET' && path === '/ingredients/suggest') {
+    if (sw === 'ingredients') return fail(500, 'SERVER_ERROR', 'mock');
+    const query = readSuggestQuery(searchParams);
+    if (!query) return fail(400, 'INVALID_INPUT', '재료명을 1~30자로 입력해 주세요.');
+    return json(200, ingredientSuggestMock(query));
   }
 
   if (method === 'GET' && path === '/ingredients') {
@@ -357,10 +366,9 @@ async function handle(url, init) {
   // /recipes/suggest도 /recipes/:id보다 먼저(서버 라우터 순서와 같게)
   if (method === 'GET' && path === '/recipes/suggest') {
     if (sw === 'search') return fail(500, 'SERVER_ERROR', 'mock');
-    const all = searchParams.getAll('q');
-    const query = all.length === 1 ? all[0].normalize('NFC').trim().replace(/\s+/g, ' ') : '';
-    if (!query || [...query].length > 30) return fail(400, 'INVALID_INPUT', '검색어를 1~30자로 입력해 주세요.');
-    return json(200, suggestMock(query));
+    const query = readSuggestQuery(searchParams);
+    if (!query) return fail(400, 'INVALID_INPUT', '검색어를 1~30자로 입력해 주세요.');
+    return json(200, recipeSuggestMock(query));
   }
 
   const recipeMatch = /^\/recipes\/(\d+)(\/cook)?$/.exec(path);

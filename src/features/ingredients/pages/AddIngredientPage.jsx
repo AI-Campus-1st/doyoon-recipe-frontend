@@ -3,6 +3,8 @@
 // 흐름 ②직접 입력: 제출 → validateCreateForm → buildCreateIngredientBody(날짜 없으면 키 생략) → POST → 토스트 → '/'
 // - 두 방식은 같은 useMutation을 공유해 동시에 두 번 등록되지 않게 한다.
 // - 원터치 목록 GET 실패여도 직접 입력 폼은 그대로 사용 가능. 실패 시 입력값 유지, 홈 이동 없음.
+// - 추천 재료명(2026-10-21 사용자 결정): 재료명을 타이핑하면 DB의 재료명(양념 제외)만 최대 8개 목록으로.
+//   고르면 입력칸에 채우기만 한다(유통기한을 정할 수 있게 바로 등록하지 않음). 레시피 이름은 나오지 않는다.
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageContainer from '../../../components/ui/PageContainer.jsx';
@@ -12,14 +14,16 @@ import TextField from '../../../components/ui/TextField.jsx';
 import DateField from '../../../components/ui/DateField.jsx';
 import Button from '../../../components/ui/Button.jsx';
 import InlineError from '../../../components/ui/InlineError.jsx';
+import SuggestionList from '../../../components/ui/SuggestionList.jsx';
 import OneTouchGrid from '../components/OneTouchGrid.jsx';
 import { useToast } from '../../../shared/toast/ToastProvider.jsx';
 import { useAsyncResource } from '../../../shared/hooks/useAsyncResource.js';
 import { useMutation } from '../../../shared/hooks/useMutation.js';
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle.js';
+import { useSuggestions } from '../../../shared/hooks/useSuggestions.js';
 import { pickErrorMessage } from '../../../shared/utils/errorMessage.js';
-import { createIngredient, fetchOneTouch } from '../ingredientService.js';
-import { buildCreateIngredientBody, validateCreateForm } from '../ingredientForm.js';
+import { createIngredient, fetchIngredientSuggestions, fetchOneTouch } from '../ingredientService.js';
+import { buildCreateIngredientBody, normalizeIngredientQuery, validateCreateForm } from '../ingredientForm.js';
 
 // 받침 유무에 따라 '을/를' 선택: '대파를', '감자를', '두부를', '햄을'
 function withObjectParticle(word) {
@@ -43,6 +47,16 @@ export default function AddIngredientPage() {
   const [expiryDate, setExpiryDate] = useState(''); // 선택 사항, 초기값 빈 문자열
   const [errors, setErrors] = useState({});
   const nameRef = useRef(null);
+  // 추천 재료를 고르면 입력칸만 채운다(포커스는 입력칸에 그대로 → 유통기한 칸으로 넘어가거나 바로 등록 가능)
+  const suggest = useSuggestions({
+    listId: 'ingredient-suggest',
+    fetchSuggestions: fetchIngredientSuggestions,
+    normalize: normalizeIngredientQuery,
+    onChoose: (item) => {
+      setName(item.label);
+      setErrors((e) => ({ ...e, name: undefined }));
+    },
+  });
 
   async function register(body, from) {
     setSource(from);
@@ -70,6 +84,7 @@ export default function AddIngredientPage() {
 
   async function handleSubmit(event) {
     event.preventDefault();
+    suggest.close(); // 추천을 고르지 않고 제출하면 입력한 이름 그대로
     const found = validateCreateForm({ name, expiryDate });
     setErrors(found);
     if (found.name) return nameRef.current?.focus();
@@ -102,19 +117,26 @@ export default function AddIngredientPage() {
         <section aria-labelledby="manual-title" className="manual">
           <SectionHeader id="manual-title" title="직접 입력하기" />
           <form className="stack-lg" onSubmit={handleSubmit} noValidate>
-            <TextField
-              ref={nameRef}
-              id="ingredient-name"
-              label="재료명"
-              required
-              value={name}
-              onChange={(v) => {
-                setName(v);
-                if (errors.name) setErrors((e) => ({ ...e, name: undefined }));
-              }}
-              placeholder="예: 닭다리살"
-              error={errors.name}
-            />
+            {/* position: relative 기준 상자 — 추천 재료 목록을 입력칸 바로 아래에 겹쳐 띄운다 */}
+            <div className="combobox">
+              <TextField
+                ref={nameRef}
+                id="ingredient-name"
+                label="재료명"
+                required
+                value={name}
+                onChange={(v) => {
+                  setName(v);
+                  if (errors.name) setErrors((e) => ({ ...e, name: undefined }));
+                  suggest.update(v); // 사용자가 타이핑했을 때만 추천 요청
+                }}
+                placeholder="예: 닭다리살"
+                error={errors.name}
+                autoComplete="off"
+                inputProps={suggest.inputProps}
+              />
+              <SuggestionList suggestions={suggest} label="추천 재료" />
+            </div>
             <DateField
               id="ingredient-expiry"
               label="유통기한"

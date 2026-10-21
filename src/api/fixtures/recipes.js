@@ -77,9 +77,16 @@ export const SEARCH_RESULTS_FULL = Array.from({ length: 20 }, (_, i) => ({
   id: 100 + i, title: `두부요리 ${i + 1}`, cook_time_min: 10, urgent_used: [], missing: [],
 }));
 
-// GET /recipes/suggest?q=두 — 검색어 자동완성(2026-10-20): 요리명(type recipe, id)·재료명(type ingredient)
-export const SUGGESTIONS = [
-  { type: 'ingredient', label: '두부' },
+// GET /recipes/suggest?q=두 — 레시피 검색 추천 검색어: 요리명만(2026-10-21, type recipe + id)
+export const RECIPE_SUGGESTIONS = [
   { type: 'recipe', id: 41, label: '두부조림' },
+  { type: 'recipe', id: 10, label: '순두부찌개' },
+  { type: 'recipe', id: 42, label: '된장국' },
+];
+
+// GET /ingredients/suggest?q=두 — 재료 등록 직접 입력 추천 재료명: 재료명만(2026-10-21, type ingredient)
+export const INGREDIENT_SUGGESTIONS = [
+  { type: 'ingredient', label: '두부' },
+  { type: 'ingredient', label: '두유' },
   { type: 'ingredient', label: '순두부' },
 ];

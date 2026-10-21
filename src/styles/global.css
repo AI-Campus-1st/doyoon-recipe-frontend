@@ -173,6 +173,28 @@ button, input { font: inherit; color: inherit; }
 .field__input:disabled { opacity: var(--opacity-disabled); }
 .field__input--with-toggle { padding-right: calc(var(--size-touch) + var(--space-xs)); }
 .field__toggle { position: absolute; right: var(--space-xs); top: 50%; transform: translateY(-50%); }
+
+/* SuggestionList — 입력칸 아래에 겹쳐 뜨는 추천 목록(레시피 검색·재료 등록 공통, 2026-10-21).
+   .combobox가 기준 상자(position: relative). 아래 내용을 밀어내지 않게 absolute로 띄운다. 최대 8개라 스크롤은 안전장치. */
+.combobox { position: relative; }
+.suggest-list {
+  position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + var(--space-xs));
+  margin: 0; padding: var(--space-xs) 0; list-style: none;
+  max-height: min(60vh, 384px); overflow-y: auto;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow-overlay);
+}
+.suggest-list__option {
+  display: flex; align-items: center;
+  min-height: 44px; /* 손가락 터치 최소 크기 */
+  padding: 0 var(--space-md);
+  cursor: pointer; color: var(--color-text);
+}
+.suggest-list__option:hover,
+.suggest-list__option.is-active { background: var(--color-primary-soft); }
+.suggest-list__label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .field__helper { margin-top: var(--space-xs); font-size: var(--font-small); line-height: var(--lh-1-45); color: var(--color-text-secondary); }
 .field__error { margin-top: var(--space-xs); font-size: var(--font-small); line-height: var(--lh-1-45); color: var(--color-error); font-weight: var(--weight-medium); }
 

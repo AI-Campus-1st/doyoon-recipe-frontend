@@ -19,6 +19,13 @@ export function buildCreateIngredientBody({ name, expiryDate }) {
   return body;
 }
 
+// 추천 재료명을 요청할 만한 입력인지(2026-10-21) — 서버 /ingredients/suggest의 q 규칙과 같다.
+// NFC(조합형 한글 → 완성형) → 앞뒤 공백 제거 → 연속 공백 하나로 → 1~30자면 그 값, 아니면 null(요청하지 않음)
+export function normalizeIngredientQuery(text) {
+  const query = String(text ?? '').normalize('NFC').trim().replace(/\s+/g, ' ');
+  return query && countChars(query) <= INGREDIENT_NAME_MAX ? query : null;
+}
+
 export function validateCreateForm({ name, expiryDate }) {
   const errors = {};
   const trimmed = name.trim();
