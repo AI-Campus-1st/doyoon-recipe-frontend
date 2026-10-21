@@ -127,7 +127,7 @@ function recommend(inventory, today, seed = '', { excludeIds = new Set(), limit 
   return pickRandom(keyMenus, limit).map(toResponse);
 }
 
-// 대표 메뉴 영역(서버 recommend.js selectKeyMenus와 같은 규칙, 2026-10-19): key_menu 레시피 중 만들기 쉬운 3개
+// 대표 메뉴 영역(서버 recommend.js selectKeyMenus와 같은 규칙, 2026-10-19): key_menu 레시피 중 만들기 쉬운 3개(재고가 없으면 전체에서 무작위, 10-21)
 // 부족 적은 순 → 조리시간 짧은 순 → 주재료 적은 순 → tieKey → id. 부족이 많아도 빼지 않는다.
 export function compareKeyMenus(a, b) {
   return (
@@ -145,8 +145,12 @@ function recommendationPage(inventory, today, seed, { section, exclude = new Set
   if (section === 'recipes') {
     return { key_menus: [], recipes: recommend(inventory, today, seed, { excludeIds: exclude, limit: RECOMMENDATION_MAX, pool: 15 }) };
   }
-  const ranked = evaluateAll(inventory, today, seed).filter((r) => r.keyMenu && !exclude.has(r.id)).sort(compareKeyMenus);
-  const keyMenus = pickRandom(ranked.slice(0, 9), KEY_MENU_MAX); // 만들기 쉬운 상위 9개 중 3개(서버와 같은 값)
+  const candidates = evaluateAll(inventory, today, seed).filter((r) => r.keyMenu && !exclude.has(r.id));
+  // 사용 가능한 재고가 없으면 순위 없이 대표 메뉴 전체에서 무작위(2026-10-21 사용자 결정, 서버 selectKeyMenus와 같음)
+  const hasUsableStock = inventory.some((i) => view(i, today).status !== 'expired');
+  const keyMenus = hasUsableStock
+    ? pickRandom(candidates.sort(compareKeyMenus).slice(0, 9), KEY_MENU_MAX) // 만들기 쉬운 상위 9개 중 3개(서버와 같은 값)
+    : pickRandom(candidates, KEY_MENU_MAX);
   if (section === 'key_menus') return { key_menus: keyMenus.map(toResponse), recipes: [] };
   const excludeIds = new Set([...exclude, ...keyMenus.map((r) => r.id)]);
   return {
