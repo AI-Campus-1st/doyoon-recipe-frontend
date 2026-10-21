@@ -3,6 +3,7 @@
 //   — 부르는 곳이 추천 화면 하나뿐이라 화면이 개수를 보낼 이유가 없고, 잘못된 값이 들어올 통로도 사라진다.
 import { ApiError, request } from '../../shared/api/httpClient.js';
 import { buildCookBody } from './cookCandidates.js';
+import { withIdempotencyKey, IDEMPOTENCY_HEADER } from '../../shared/api/idempotencyKeys.js';
 
 // 추천 응답 = { key_menus: 대표 메뉴(최대 3), recipes: 일반 추천(최대 5) } (2026-10-19 사용자 결정)
 // - 두 배열이 모두 있어야 정상. 옛 배열 응답·빠진 필드는 추측해 채우지 않고 오류 화면('추천을 불러오지 못했어요.')으로.
@@ -68,5 +69,12 @@ export const fetchRecipe = (id, signal) =>
   request(`/recipes/${encodeURIComponent(id)}`, { signal }).then(assertRecipeDetail);
 
 // 200 { deleted, history_id } — 선택 삭제 + 기록 저장은 서버가 하나의 트랜잭션으로 처리
+// 요리 완료: 결과를 모른 채 다시 누르면 같은 Idempotency-Key로 보내 서버가 두 번 기록하지 않게 한다(2026-10-21).
+// 키는 레시피마다 하나(sessionStorage 30분) — 고른 재료가 달라져도 같은 시도로 본다(서버는 처음 결과를 돌려줌).
 export const cookRecipe = (id, selectedIds) =>
-  request(`/recipes/${encodeURIComponent(id)}/cook`, { method: 'POST', body: buildCookBody(selectedIds) });
+  withIdempotencyKey(`cook:${id}`, (key) =>
+    request(`/recipes/${encodeURIComponent(id)}/cook`, {
+      method: 'POST',
+      body: buildCookBody(selectedIds),
+      headers: { [IDEMPOTENCY_HEADER]: key },
+    }));

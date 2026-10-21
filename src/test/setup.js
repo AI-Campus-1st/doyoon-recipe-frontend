@@ -13,6 +13,7 @@ configureHttpClient(TEST_TIMING);
 afterEach(() => {
   cleanup();
   window.localStorage.clear();
+  window.sessionStorage.clear(); // 요청 중복 방지 키(shared/api/idempotencyKeys.js)가 다음 테스트로 새지 않게
   resetHttpClientForTest();
   configureHttpClient(TEST_TIMING);
 });

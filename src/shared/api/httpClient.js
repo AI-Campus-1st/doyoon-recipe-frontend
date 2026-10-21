@@ -110,12 +110,13 @@ async function readJson(response) {
 
 /**
  * @param {string} path '/ingredients' 처럼 /api 이후 경로
- * @param {{method?: string, body?: unknown, auth?: boolean, signal?: AbortSignal}} options
+ * @param {{method?: string, body?: unknown, auth?: boolean, signal?: AbortSignal, headers?: Record<string,string>}} options
  *   auth=false: 로그인/가입처럼 토큰 없이 보내고, 401을 '폼 오류'로 돌려준다.
+ *   headers: 더 붙일 헤더(예: Idempotency-Key — shared/api/idempotencyKeys.js)
  */
-export async function request(path, { method = 'GET', body, auth = true, signal } = {}) {
+export async function request(path, { method = 'GET', body, auth = true, signal, headers: extraHeaders } = {}) {
   const startedVersion = sessionVersion;
-  const headers = { Accept: 'application/json' };
+  const headers = { Accept: 'application/json', ...extraHeaders };
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   if (auth) {
     const token = getToken();
