@@ -4,13 +4,16 @@
 // - network: 응답 자체가 없을 때(status 0 — 인터넷 끊김·서버 꺼짐). 기본은 모든 화면 공통 문구(2026-10-20).
 // - invalid: 400(입력 형식 오류)일 때 문구. 화면 검증을 통과했는데 서버가 거절한 경우라 "다시 확인해 주세요" 톤.
 // - notFound: 404(이미 지워졌거나 없는 항목)일 때 문구. 화면이 다시 시도보다 다른 행동을 안내해야 할 때 쓴다.
+// - TIMEOUT(시간 제한 70초 초과, 2026-10-21): 인터넷 탓이 아니라 서버가 늦은 것이므로 어느 화면이든 TIMEOUT_MESSAGE.
 // - 429(로그인·가입 시도 횟수 초과, 2026-10-21): 어느 화면이든 공통 문구 TOO_MANY_MESSAGE. 서버 문구는 쓰지 않는다.
 // - fallback: 그 밖의 실패(500 등) 문구.
 // - 401·409처럼 화면이 따로 처리하는 상태는 호출 전에 걸러 낸다.
 export const NETWORK_MESSAGE = '인터넷 연결을 확인하고 다시 시도해 주세요.';
+export const TIMEOUT_MESSAGE = '서버 응답이 늦어요. 잠시 후 다시 시도해 주세요.';
 export const TOO_MANY_MESSAGE = '요청이 너무 많아요. 잠시 후 다시 시도해 주세요.';
 
 export function pickErrorMessage(error, { invalid, notFound, network = NETWORK_MESSAGE, fallback }) {
+  if (error?.code === 'TIMEOUT') return TIMEOUT_MESSAGE;
   if (error?.status === 0) return network;
   if (error?.status === 429) return TOO_MANY_MESSAGE;
   if (error?.status === 400 && invalid) return invalid;

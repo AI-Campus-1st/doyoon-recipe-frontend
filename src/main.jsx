@@ -5,6 +5,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './app/App.jsx';
+import { warmUpServer } from './shared/api/httpClient.js';
 import './styles/tokens.css';
 import './styles/global.css';
 import './styles/pages.css';
@@ -13,6 +14,9 @@ async function bootstrap() {
   if (import.meta.env.MODE === 'mock') {
     const { installMockServer } = await import('./mocks/mockServer.js');
     installMockServer();
+  } else {
+    // 잠든 배포 서버(Render 무료)를 화면이 뜨는 동안 미리 깨운다 — 결과는 기다리지 않음(2026-10-21)
+    warmUpServer();
   }
   createRoot(document.getElementById('root')).render(
     <StrictMode>

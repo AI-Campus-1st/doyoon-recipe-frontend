@@ -325,6 +325,27 @@ button, input { font: inherit; color: inherit; }
 }
 .toast--error { border-left-color: var(--color-urgent); }
 
+/* ---------- 느린 서버 안내 (app/SlowServerNotice) ----------
+   요청이 5초 넘게 걸릴 때 화면 아래쪽에 고정. 토스트(위쪽)와 겹치지 않고, 버튼 클릭을 막지 않는다. */
+.slow-notice-region {
+  position: fixed; left: 0; right: 0; bottom: calc(var(--space-lg) + env(safe-area-inset-bottom, 0px));
+  z-index: var(--layer-toast);
+  display: flex; justify-content: center; padding-inline: var(--space-lg);
+  pointer-events: none;
+}
+.slow-notice {
+  max-width: var(--layout-app-max); width: 100%;
+  padding: var(--space-md) var(--space-lg);
+  background: var(--color-warning-bg);
+  color: var(--color-text);
+  border: var(--size-hairline) solid var(--color-border);
+  border-left: var(--space-xs) solid var(--color-warning);
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow-overlay);
+  font-size: var(--font-small); font-weight: var(--weight-semibold);
+  animation: overlay-in var(--motion-overlay) ease-out;
+}
+
 /* ---------- 한 줄 말줄임 ----------
    칸 너비를 넘는 글자만 끝을 '…'로 줄인다(글자 수 기준이 아님 — 화면 폭에 따라 보이는 만큼 표시).
    글자 자체는 DOM에 그대로 있어 화면 낭독기는 전체 이름을 읽는다. flex/grid 자식이면 부모 쪽 min-width: 0 필요. */

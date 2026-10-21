@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { pickErrorMessage, NETWORK_MESSAGE, TOO_MANY_MESSAGE } from './errorMessage.js';
+import { pickErrorMessage, NETWORK_MESSAGE, TOO_MANY_MESSAGE, TIMEOUT_MESSAGE } from './errorMessage.js';
 
 // 사용자 결정(2026-10-19): 서버 오류의 message는 화면에 그대로 쓰지 않고, 화면이 정한 '상황별' 문구를 보여 준다.
 describe('pickErrorMessage', () => {
@@ -26,5 +26,9 @@ describe('pickErrorMessage', () => {
   it('429(시도 횟수 초과)는 어느 화면이든 잠시 후 다시 시도 문구(2026-10-21)', () => {
     expect(TOO_MANY_MESSAGE).toBe('요청이 너무 많아요. 잠시 후 다시 시도해 주세요.');
     expect(pickErrorMessage({ status: 429, message: '서버 문구' }, messages)).toBe(TOO_MANY_MESSAGE);
+  });
+  it('시간 제한(TIMEOUT)은 어느 화면이든 서버가 늦다는 문구 — 인터넷 탓으로 안내하지 않음(2026-10-21)', () => {
+    expect(TIMEOUT_MESSAGE).toBe('서버 응답이 늦어요. 잠시 후 다시 시도해 주세요.');
+    expect(pickErrorMessage({ status: 0, code: 'TIMEOUT' }, { ...messages, network: '오프라인이에요.' })).toBe(TIMEOUT_MESSAGE);
   });
 });
