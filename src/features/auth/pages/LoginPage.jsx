@@ -1,5 +1,5 @@
 // S1 로그인 페이지 (/login) — docs/design/pages/Login.md
-// 흐름: 폼 제출 → validateLogin → authService.login → AuthProvider.completeLogin(토큰 저장 + '/' 이동)
+// 흐름: 폼 제출 → validateLogin → authService.login → AuthProvider.completeLogin(로그인 표시 저장 + '/' 이동, 토큰은 서버가 쿠키로)
 // - 401은 폼 오류(아이디는 유지, 비밀번호는 비움). 네트워크/서버 오류도 입력 유지 후 재제출 가능.
 // - 사용자 확정 간격: 아이디 입력칸→비밀번호 라벨 = spacing.LoginFieldGap, 비밀번호 입력칸→로그인 버튼 = spacing.LoginButtonGap.
 //   각 필드를 별도 wrapper(.login-form__group)로 감싸고 그룹 간 간격으로 구현한다(라벨 margin으로 처리하지 않음).
@@ -21,7 +21,7 @@ import { login } from '../authService.js';
 
 export default function LoginPage() {
   useDocumentTitle('로그인');
-  const { token, completeLogin } = useAuth();
+  const { user, completeLogin } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
@@ -30,7 +30,7 @@ export default function LoginPage() {
   const passwordRef = useRef(null);
   const { run, pending } = useMutation(login);
 
-  if (token) return <Navigate to="/" replace />;
+  if (user) return <Navigate to="/" replace />;
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -41,7 +41,7 @@ export default function LoginPage() {
     if (errors.password) return passwordRef.current?.focus();
 
     const result = await run({ username, password });
-    if (result.ok) return completeLogin(result.data.token);
+    if (result.ok) return completeLogin(result.data.user);
     if (result.skipped) return;
     const { error } = result;
     if (error.status === 401) {

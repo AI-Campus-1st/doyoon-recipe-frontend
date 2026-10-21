@@ -19,14 +19,14 @@ import { signup } from '../authService.js';
 export default function SignupPage() {
   useDocumentTitle('회원가입');
   const navigate = useNavigate();
-  const { token, completeLogin } = useAuth();
+  const { user, completeLogin } = useAuth();
   const [form, setForm] = useState({ username: '', password: '', confirmPassword: '' });
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
   const refs = { username: useRef(null), password: useRef(null), confirmPassword: useRef(null) };
   const { run, pending } = useMutation(signup);
 
-  if (token) return <Navigate to="/" replace />;
+  if (user) return <Navigate to="/" replace />;
 
   const update = (key) => (value) => {
     setForm((f) => ({ ...f, [key]: value }));
@@ -42,7 +42,7 @@ export default function SignupPage() {
     if (firstInvalid) return refs[firstInvalid].current?.focus();
 
     const result = await run({ username: form.username, password: form.password });
-    if (result.ok) return completeLogin(result.data.token);
+    if (result.ok) return completeLogin(result.data.user);
     if (result.skipped) return;
     const { error } = result;
     if (error.status === 409) {

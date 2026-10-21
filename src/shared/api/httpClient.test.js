@@ -15,19 +15,21 @@ describe('httpClient.request', () => {
   let onUnauthorized;
   beforeEach(() => {
     onUnauthorized = vi.fn();
-    configureHttpClient({ getToken: () => 'tkn', onUnauthorized });
+    configureHttpClient({ onUnauthorized });
   });
 
-  it('/api 기준 경로와 Bearer 토큰을 붙인다', async () => {
+  // 2026-10-21: 로그인 토큰은 HttpOnly 쿠키 — 화면 코드는 토큰을 모르고, 브라우저가 쿠키를 자동으로 붙인다
+  it('/api 기준 경로로 보내고, 쿠키를 함께 보내며(credentials same-origin) Authorization 헤더는 붙이지 않는다', async () => {
     const transport = vi.fn().mockResolvedValue(jsonResponse(200, [1]));
     setTransport(transport);
     await expect(request('/ingredients')).resolves.toEqual([1]);
     const [url, init] = transport.mock.calls[0];
     expect(url).toBe('/api/ingredients');
-    expect(init.headers.Authorization).toBe('Bearer tkn');
+    expect(init.credentials).toBe('same-origin');
+    expect(init.headers.Authorization).toBeUndefined();
   });
 
-  it('auth:false 요청에는 토큰을 붙이지 않는다', async () => {
+  it('auth:false 요청(로그인·가입)도 Authorization 없이 본문만 보낸다', async () => {
     const transport = vi.fn().mockResolvedValue(jsonResponse(200, {}));
     setTransport(transport);
     await request('/auth/login', { method: 'POST', body: { a: 1 }, auth: false });

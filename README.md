@@ -29,7 +29,7 @@ src/
 ├── main.jsx                 진입점 (목업 모드일 때만 mocks 설치)
 ├── app/                     라우팅(App.jsx), 보호 라우트
 ├── shared/
-│   ├── api/httpClient.js    모든 API 요청의 단일 통로 (Bearer, 204, 오류 계약, 401, 늦은 응답 차단)
+│   ├── api/httpClient.js    모든 API 요청의 단일 통로 (로그인 쿠키, 204, 오류 계약, 401, 늦은 응답 차단)
 │   ├── auth/                토큰 저장소 + AuthProvider(로그인 완료/로그아웃/401 처리)
 │   ├── hooks/               useAsyncResource(읽기), useMutation(변경·중복 방지), useDocumentTitle
 │   ├── overlay/useOverlay   모달/시트 공통 동작(inert, 스크롤 잠금, 포커스 트랩·복귀, ESC)

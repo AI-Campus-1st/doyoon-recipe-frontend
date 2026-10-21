@@ -1,11 +1,13 @@
 // 공통 HTTP 클라이언트 — 모든 API 요청이 지나가는 단 하나의 통로
-// - 역할: /api 기준 경로, Authorization: Bearer 헤더, 응답 상태/오류 형식 처리, 401 처리, 로그아웃 후 늦은 응답 차단.
+// - 역할: /api 기준 경로, 로그인 쿠키 동봉, 응답 상태/오류 형식 처리, 401 처리, 로그아웃 후 늦은 응답 차단.
+// - 2026-10-21: 로그인 토큰은 서버가 심는 HttpOnly 쿠키다. 여기서는 credentials:'same-origin'으로 쿠키를 함께 보내기만 하고
+//   토큰 값은 모른다(Authorization 헤더 없음). 같은 주소(/api)로만 보내므로 다른 사이트에는 쿠키가 가지 않는다.
 // - 2026-10-21(배포 후): 배포 서버(Render 무료)는 15분 쉬면 잠들고 깨는 데 50초+ 걸린다. 그래서
 //   ① 시간 제한(기본 70초, 넘으면 ApiError code TIMEOUT) ② 5초 넘게 걸리면 '느림' 알림(subscribeSlowRequests → 화면 안내)
 //   ③ GET만 연결 실패·502·503·504일 때 1초·3초 뒤 다시 시도(데이터를 바꾸는 요청은 중복될 수 있어 다시 보내지 않음)
 //   ④ warmUpServer: 앱을 열자마자 /api/health를 한 번 보내 서버를 미리 깨운다.
 // - 호출자: features/*/xxxService.js (페이지 → 서비스 → 여기). UI 컴포넌트는 직접 호출하지 않는다.
-// - 연결: AuthProvider가 configureHttpClient로 토큰 읽기/401 처리 함수를 등록한다.
+// - 연결: AuthProvider가 configureHttpClient로 401 처리 함수를 등록한다.
 //   개발용 목업 모드(main.jsx)는 setTransport로 fetch 대신 가짜 서버를 끼운다.
 
 const BASE = '/api';
@@ -30,7 +32,6 @@ export class StaleSessionError extends Error {
 
 const defaultTransport = (url, init) => fetch(url, init);
 let transport = defaultTransport;
-let getToken = () => null;
 let onUnauthorized = () => {};
 let sessionVersion = 0;
 
@@ -54,12 +55,11 @@ export function subscribeSlowRequests(fn) {
   return () => slowListeners.delete(fn);
 }
 
-// 테스트 전용 초기화 — 이 파일의 설정(transport·토큰 읽기·401 처리·세션 번호)은 모듈 전역이라
+// 테스트 전용 초기화 — 이 파일의 설정(transport·401 처리·세션 번호)은 모듈 전역이라
 // 앞 테스트에서 등록한 값이 다음 테스트로 새어 나간다. src/test/setup.js가 매 테스트 뒤에 호출해
 // "앞 테스트 덕분에 우연히 통과"하는 일을 막는다. 앱 코드에서는 호출하지 않는다.
 export function resetHttpClientForTest() {
   transport = defaultTransport;
-  getToken = () => null;
   onUnauthorized = () => {};
   sessionVersion = 0;
   timing = { ...HTTP_DEFAULTS };
@@ -72,7 +72,6 @@ export function setTransport(fn) {
 }
 
 export function configureHttpClient(options) {
-  if (options.getToken) getToken = options.getToken;
   if (options.onUnauthorized) onUnauthorized = options.onUnauthorized;
   if (options.timeoutMs !== undefined) timing.timeoutMs = options.timeoutMs;
   if (options.slowMs !== undefined) timing.slowMs = options.slowMs;
@@ -111,21 +110,18 @@ async function readJson(response) {
 /**
  * @param {string} path '/ingredients' 처럼 /api 이후 경로
  * @param {{method?: string, body?: unknown, auth?: boolean, signal?: AbortSignal, headers?: Record<string,string>}} options
- *   auth=false: 로그인/가입처럼 토큰 없이 보내고, 401을 '폼 오류'로 돌려준다.
+ *   auth=false: 로그인/가입처럼 401을 '폼 오류'로 돌려준다(자동 로그아웃·늦은 응답 차단 대상 아님).
  *   headers: 더 붙일 헤더(예: Idempotency-Key — shared/api/idempotencyKeys.js)
  */
 export async function request(path, { method = 'GET', body, auth = true, signal, headers: extraHeaders } = {}) {
   const startedVersion = sessionVersion;
   const headers = { Accept: 'application/json', ...extraHeaders };
   if (body !== undefined) headers['Content-Type'] = 'application/json';
-  if (auth) {
-    const token = getToken();
-    if (token) headers.Authorization = `Bearer ${token}`;
-  }
 
   const response = await sendWithTimeout(`${BASE}${path}`, {
     method,
     headers,
+    credentials: 'same-origin', // 로그인 쿠키(HttpOnly)를 브라우저가 붙이게 한다 — 같은 주소의 /api로만
     body: body === undefined ? undefined : JSON.stringify(body),
   }, signal);
 

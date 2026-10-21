@@ -12,7 +12,7 @@ export function mockApi(routes) {
   const transport = vi.fn(async (url, init) => {
     const key = `${init.method} ${url.replace(/^\/api/, '').replace(/\?.*$/, '')}`;
     const body = init.body ? JSON.parse(init.body) : undefined;
-    calls.push({ key, url, body, headers: init.headers });
+    calls.push({ key, url, body, headers: init.headers, credentials: init.credentials });
     const handler = routes[key];
     if (!handler) return new Response(JSON.stringify({ error: { code: 'NOT_FOUND', message: key } }), { status: 404 });
     const result = await handler(body, url); // url: 쿼리 문자열까지 보고 응답을 바꿀 때(예: ?section=)
@@ -27,8 +27,10 @@ export function mockApi(routes) {
 }
 
 // path에 배열을 주면 브라우저 기록처럼 쌓인다(마지막이 현재 화면) — '이전 화면으로' 확인용
+// token: 로그인한 상태로 시작할지(기본 로그인). 2026-10-21부터 토큰은 HttpOnly 쿠키라 화면이 보관하지 않으므로,
+//   여기서는 '로그인했다는 표시'(shared/auth/sessionHint.js, 비밀 아님)만 넣는다. null이면 로그아웃 상태.
 export function renderApp(path, { token = 'test-token' } = {}) {
-  if (token) window.localStorage.setItem('recipe.auth.token', token);
+  if (token) window.localStorage.setItem('recipe.auth.user', JSON.stringify({ id: 1, username: 'cook01' }));
   const entries = Array.isArray(path) ? path : [path];
   return render(
     <MemoryRouter initialEntries={entries} initialIndex={entries.length - 1}>

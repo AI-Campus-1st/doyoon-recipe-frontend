@@ -70,7 +70,9 @@ describe('S1 로그인', () => {
     const loginCalls = calls.filter((c) => c.key === 'POST /auth/login');
     expect(loginCalls).toHaveLength(1);
     expect(loginCalls[0].body).toEqual({ username: 'cook01', password: 'password1' });
-    expect(window.localStorage.getItem('recipe.auth.token')).toBe('t');
+    // 토큰은 저장하지 않고(HttpOnly 쿠키), 로그인했다는 표시(비밀 아님)만 남긴다
+    expect(window.localStorage.getItem('recipe.auth.token')).toBeNull();
+    expect(JSON.parse(window.localStorage.getItem('recipe.auth.user'))).toEqual({ id: 1, username: 'cook01' });
   });
 });
 
@@ -137,39 +139,74 @@ describe('S2 회원가입', () => {
 });
 
 describe('보호 라우트와 401', () => {
-  it('토큰이 없으면 /login으로', () => {
+  it('로그인 표시가 없으면 /login으로', () => {
     mockApi({});
     renderApp('/', { token: null });
     expect(screen.getByRole('heading', { level: 1, name: '로그인' })).toBeInTheDocument();
   });
 
-  it('보호 API 401이면 토큰을 지우고 로그인으로 이동', async () => {
+  it('보호 API 401이면 로그인 표시를 지우고 로그인으로 이동', async () => {
     mockApi({
       'GET /rescue': () => [401, UNAUTHORIZED],
       'GET /ingredients': () => [200, []],
     });
     renderApp('/');
     expect(await screen.findByRole('heading', { level: 1, name: '로그인' })).toBeInTheDocument();
-    await waitFor(() => expect(window.localStorage.getItem('recipe.auth.token')).toBeNull());
+    await waitFor(() => expect(window.localStorage.getItem('recipe.auth.user')).toBeNull());
   });
 
-  // 회귀 테스트: 새로고침(저장된 토큰으로 앱 첫 렌더) 직후의 첫 보호 요청에도 Bearer 토큰이 붙어야 한다.
-  // 실제 서버처럼 토큰이 없으면 401을 돌려주게 해서, 버그가 있으면 로그인 화면으로 튕기는지 확인한다.
-  it('새로고침 직후 첫 요청에도 토큰을 보내 로그인 상태가 유지된다', async () => {
+  // 새로고침: 로그인 표시가 있으면 서버 확인을 기다리지 않고 바로 보호 화면을 그린다(잠든 서버를 50초 기다리지 않게).
+  // 요청에는 쿠키가 같이 가고(credentials) Authorization 헤더는 없다. 쿠키가 만료됐으면 첫 요청의 401로 로그인 화면.
+  it('새로고침 직후에도 로그인 상태가 유지되고, 요청은 쿠키로 보낸다(Authorization 없음)', async () => {
     const calls = mockApi({
-      'GET /rescue': () =>
-        calls.at(-1).headers.Authorization === 'Bearer stored-token'
-          ? [200, RESCUE_EMPTY]
-          : [401, UNAUTHORIZED],
-      'GET /ingredients': () =>
-        calls.at(-1).headers.Authorization === 'Bearer stored-token'
-          ? [200, []]
-          : [401, UNAUTHORIZED],
+      'GET /rescue': () => [200, RESCUE_EMPTY],
+      'GET /ingredients': () => [200, []],
     });
-    renderApp('/', { token: 'stored-token' });
+    renderApp('/');
     expect(await screen.findByText('아직 등록한 재료가 없어요')).toBeInTheDocument();
-    expect(calls.map((c) => c.headers.Authorization)).toEqual(['Bearer stored-token', 'Bearer stored-token']);
     expect(screen.getByRole('heading', { level: 1, name: '내 냉장고' })).toBeInTheDocument();
-    expect(window.localStorage.getItem('recipe.auth.token')).toBe('stored-token');
+    expect(calls).toHaveLength(2);
+    for (const c of calls) expect(c.headers.Authorization).toBeUndefined();
+    expect(calls.every((c) => c.credentials === 'same-origin')).toBe(true);
+  });
+
+  // 전환 전에 로그인해 둔 사용자(사용자 결정: 한 번 다시 로그인): 옛 localStorage 토큰은 지우고 로그인 화면으로
+  it('옛 방식 토큰(localStorage)만 있으면 지우고 로그인 화면으로', () => {
+    mockApi({});
+    window.localStorage.setItem('recipe.auth.token', 'old-jwt');
+    renderApp('/', { token: null });
+    expect(screen.getByRole('heading', { level: 1, name: '로그인' })).toBeInTheDocument();
+    expect(window.localStorage.getItem('recipe.auth.token')).toBeNull();
+  });
+});
+
+describe('로그아웃(F02)', () => {
+  it('서버에 로그아웃(쿠키 삭제)을 요청하고, 로그인 표시를 지운 뒤 로그인 화면으로', async () => {
+    const calls = mockApi({
+      'GET /rescue': () => [200, RESCUE_EMPTY],
+      'GET /ingredients': () => [200, []],
+      'POST /auth/logout': () => [204, null],
+    });
+    renderApp('/');
+    const user = userEvent.setup();
+    await screen.findByText('아직 등록한 재료가 없어요');
+    await user.click(screen.getByRole('button', { name: '로그아웃' }));
+    expect(await screen.findByRole('heading', { level: 1, name: '로그인' })).toBeInTheDocument();
+    expect(calls.filter((c) => c.key === 'POST /auth/logout')).toHaveLength(1);
+    expect(window.localStorage.getItem('recipe.auth.user')).toBeNull();
+  });
+
+  it('로그아웃 요청이 실패해도(연결 끊김) 화면은 로그아웃된다', async () => {
+    mockApi({
+      'GET /rescue': () => [200, RESCUE_EMPTY],
+      'GET /ingredients': () => [200, []],
+      'POST /auth/logout': () => { throw new TypeError('Failed to fetch'); },
+    });
+    renderApp('/');
+    const user = userEvent.setup();
+    await screen.findByText('아직 등록한 재료가 없어요');
+    await user.click(screen.getByRole('button', { name: '로그아웃' }));
+    expect(await screen.findByRole('heading', { level: 1, name: '로그인' })).toBeInTheDocument();
+    expect(window.localStorage.getItem('recipe.auth.user')).toBeNull();
   });
 });

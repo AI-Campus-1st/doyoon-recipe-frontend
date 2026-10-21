@@ -9,6 +9,24 @@ import { setTransport } from '../shared/api/httpClient.js';
 import { INITIAL_INVENTORY, ONE_TOUCH, RECIPES, SEASONING_LIST, MOCK_SEASONINGS } from '../api/mock/index.js';
 
 const DB_KEY = 'mock.db';
+// 로그인 쿠키 흉내: 실제 서버는 HttpOnly 쿠키로 로그인을 기억하지만(2026-10-21), 가짜 transport는 쿠키를 볼 수 없어
+// '지금 로그인한 아이디'를 localStorage에 따로 둔다. 로그인·가입 때 저장, 로그아웃 때 삭제.
+const SESSION_KEY = 'mock.session';
+function readSession() {
+  try {
+    return window.localStorage.getItem(SESSION_KEY) ?? '';
+  } catch {
+    return '';
+  }
+}
+function writeSession(username) {
+  try {
+    if (username) window.localStorage.setItem(SESSION_KEY, username);
+    else window.localStorage.removeItem(SESSION_KEY);
+  } catch {
+    // 무시
+  }
+}
 const LATENCY_MS = 450;
 
 // Asia/Seoul 기준 오늘 날짜(YYYY-MM-DD) — '서버'가 계산하는 값을 흉내 낸다
@@ -254,16 +272,22 @@ async function handle(url, init) {
     db.users[body.username] = { id: Object.keys(db.users).length + 1, password: body.password };
     seedInventory(db, body.username);
     saveDb(db);
-    return json(201, { token: `mock.${body.username}`, user: { id: db.users[body.username].id, username: body.username } });
+    writeSession(body.username);
+    return json(201, { user: { id: db.users[body.username].id, username: body.username } });
   }
   if (method === 'POST' && path === '/auth/login') {
     const user = db.users[body?.username];
     if (!user || user.password !== body?.password) return fail(401, 'UNAUTHORIZED', '아이디 또는 비밀번호가 올바르지 않아요.');
-    return json(200, { token: `mock.${body.username}`, user: { id: user.id, username: body.username } });
+    writeSession(body.username);
+    return json(200, { user: { id: user.id, username: body.username } });
+  }
+  if (method === 'POST' && path === '/auth/logout') {
+    writeSession('');
+    return new Response(null, { status: 204 });
   }
 
-  // --- 보호 API: Bearer mock.<username> ---
-  const username = (init.headers?.Authorization ?? '').replace(/^Bearer mock\./, '');
+  // --- 보호 API: 로그인 쿠키 흉내(mock.session) ---
+  const username = readSession();
   if (!username || !db.users[username]) return fail(401, 'UNAUTHORIZED', '로그인이 필요해요.');
   const inventory = db.inventories[username] ?? [];
   const seed = `${db.users[username].id}:${today}`;
