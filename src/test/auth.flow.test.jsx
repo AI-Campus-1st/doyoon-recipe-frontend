@@ -5,6 +5,8 @@ import { mockApi, renderApp, deferred } from './renderApp.jsx';
 // 가짜 API 응답 본문은 src/api/fixtures/에 모아 두었다.
 import { LOGIN_SUCCESS, HOME_EMPTY_ROUTES, RESCUE_EMPTY, UNAUTHORIZED, DUPLICATE, INVALID_INPUT } from '../api/fixtures/index.js';
 
+const TOO_MANY = { error: { code: 'TOO_MANY_REQUESTS', message: 'SERVER-MESSAGE-SHOULD-NOT-SHOW' } };
+
 describe('S1 로그인', () => {
   it('H1은 정확히 "로그인" 하나', () => {
     mockApi({});
@@ -34,6 +36,18 @@ describe('S1 로그인', () => {
     await user.click(screen.getByRole('button', { name: '로그인' }));
     expect(await screen.findByText('아이디와 비밀번호를 다시 확인해 주세요.')).toBeInTheDocument();
     expect(screen.queryByText('SERVER-MESSAGE-SHOULD-NOT-SHOW')).not.toBeInTheDocument();
+  });
+
+  it('429(로그인 시도 횟수 초과)면 잠시 후 다시 시도 안내(2026-10-21)', async () => {
+    mockApi({ 'POST /auth/login': () => [429, TOO_MANY] });
+    renderApp('/login', { token: null });
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText('아이디'), 'cook01');
+    await user.type(screen.getByLabelText('비밀번호'), 'password1');
+    await user.click(screen.getByRole('button', { name: '로그인' }));
+    expect(await screen.findByText('요청이 너무 많아요. 잠시 후 다시 시도해 주세요.')).toBeInTheDocument();
+    expect(screen.queryByText('SERVER-MESSAGE-SHOULD-NOT-SHOW')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('아이디')).toHaveValue('cook01');
   });
 
   it('요청 중 연타해도 한 번만 전송하고, 성공하면 username/password만 보낸 뒤 홈으로 간다', async () => {
@@ -84,6 +98,17 @@ describe('S2 회원가입', () => {
     expect(await screen.findByText('아이디와 비밀번호 형식을 다시 확인해 주세요.')).toBeInTheDocument();
     expect(screen.queryByText('SERVER-MESSAGE-SHOULD-NOT-SHOW')).not.toBeInTheDocument();
     expect(screen.getByLabelText('아이디')).toHaveValue('cook01');
+  });
+
+  it('429(가입 시도 횟수 초과)면 잠시 후 다시 시도 안내(2026-10-21)', async () => {
+    mockApi({ 'POST /auth/signup': () => [429, TOO_MANY] });
+    renderApp('/signup', { token: null });
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText('아이디'), 'cook01');
+    await user.type(screen.getByLabelText('비밀번호'), 'password1');
+    await user.type(screen.getByLabelText('비밀번호 확인'), 'password1');
+    await user.click(screen.getByRole('button', { name: '회원가입' }));
+    expect(await screen.findByText('요청이 너무 많아요. 잠시 후 다시 시도해 주세요.')).toBeInTheDocument();
   });
 
   it('비밀번호에 공백이 있으면 비밀번호 칸 아래 오류, 요청하지 않음(사용자 결정 2026-10-20)', async () => {
